@@ -12,6 +12,7 @@ import type {
 import {
   DEFAULT_CAPTIONS,
   DEFAULT_THEME,
+  PROJECT_SCHEMA_VERSION,
   buildTemplateLayers,
   formatPreset,
   newAvatarLayer,
@@ -179,6 +180,7 @@ export async function generateVideoFromScript(
     id: uid("project"),
     kind: options.kind ?? "aula",
     name: options.title.trim() || "Vídeo do roteiro",
+    schemaVersion: PROJECT_SCHEMA_VERSION,
     format: preset.id,
     width: preset.width,
     height: preset.height,

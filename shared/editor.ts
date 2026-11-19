@@ -312,6 +312,8 @@ export interface Project {
   id: string;
   name: string;
   kind?: ProjectKind;
+  /** Document version, used to migrate projects saved by older releases. */
+  schemaVersion: number;
   format: FormatPresetId;
   width: number;
   height: number;
@@ -446,6 +448,49 @@ export const DEFAULT_THEME: ProjectTheme = {
   fontDisplay: "Space Grotesk",
   fontBody: "Inter",
 };
+
+export const PROJECT_SCHEMA_VERSION = 2;
+
+/**
+ * Reads projects saved by older versions without breaking the editor.
+ * Version 2 introduced narration offsets, background video offsets and a
+ * schema number. Projects without a number are treated as version 1.
+ */
+export function migrateProject(input: Project): Project {
+  if (!input || !Array.isArray(input.scenes)) {
+    throw new Error("Projeto inválido: cenas não encontradas.");
+  }
+
+  const project = input as Project;
+  if (typeof project.schemaVersion !== "number") project.schemaVersion = 1;
+  if (project.schemaVersion > PROJECT_SCHEMA_VERSION) {
+    throw new Error(
+      "Este projeto foi criado em uma versão mais nova do Studio Nova. Atualize o aplicativo para abri-lo.",
+    );
+  }
+
+  if (project.schemaVersion < 2) {
+    project.captions = { ...DEFAULT_CAPTIONS, ...project.captions };
+    project.theme = { ...DEFAULT_THEME, ...project.theme };
+    project.media = project.media ?? [];
+    project.scenes = project.scenes.map(scene => ({
+      ...scene,
+      duration: Number.isFinite(scene.duration) ? scene.duration : 5,
+      layers: scene.layers ?? [],
+      background: {
+        ...scene.background,
+        startAt: scene.background?.startAt ?? 0,
+      },
+      narration: {
+        ...scene.narration,
+        offset: scene.narration?.offset ?? 0,
+      },
+    }));
+    project.schemaVersion = PROJECT_SCHEMA_VERSION;
+  }
+
+  return project;
+}
 
 let counter = 0;
 export function uid(prefix = "id"): string {
@@ -761,6 +806,7 @@ export function createStarterProject(name = "Minha primeira aula"): Project {
     id: uid("project"),
     kind: "aula",
     name,
+    schemaVersion: PROJECT_SCHEMA_VERSION,
     format: preset.id,
     width: preset.width,
     height: preset.height,
@@ -920,6 +966,7 @@ export function createProject(kind: ProjectKind = "aula", name?: string): Projec
     id: uid("project"),
     kind,
     name: name ?? preset.label,
+    schemaVersion: PROJECT_SCHEMA_VERSION,
     format: format.id,
     width: format.width,
     height: format.height,

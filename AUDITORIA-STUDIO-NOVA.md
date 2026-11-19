@@ -443,3 +443,78 @@ Se a ordem acima for respeitada, o produto deixa de ser um protótipo promissor 
 ### O que ficou para o Sprint 1
 
 Exportação WebCodecs em worker, fila de render, arquivo `.nova.zip`, SRT/VTT, referência de mídia mais sofisticada, schema versionado e exportação em lote.
+
+---
+
+## 12. Sprint 1 executado
+
+**Data da execução:** 19/11/2026
+
+### Exportação v2 com WebCodecs
+
+- Novo pipeline `client/src/engine/exportFast.ts` + `exportWorker.ts`.
+- Os quadros são renderizados pelo mesmo `drawProjectFrame` da prévia e enviados como `VideoFrame` para um worker.
+- O worker codifica **H.264** com `VideoEncoder`, áudio com `AudioEncoder` e muxa um **MP4 real** com `mp4-muxer`.
+- Quando o navegador oferece AAC, o áudio sai em AAC; quando não oferece, usa Opus e o diálogo avisa sobre compatibilidade.
+- Se o navegador não tiver os codecs necessários, a exportação cai automaticamente para o `MediaRecorder` em tempo real.
+- Quando OPFS está disponível, o MP4 é escrito direto em disco (`FileSystemWritableFileStreamTarget`), evitando manter aulas longas na RAM.
+- Backpressure de 4 quadros e `yield` via `MessageChannel` mantêm a interface responsiva.
+- Progresso mostra quadro atual, total e porcentagem.
+
+### Arquivo de projeto `.nova.zip`
+
+- `client/src/lib/projectArchive.ts`.
+- Exporta `project.json`, `legendas.srt`, `legendas.vtt` e todas as mídias em `media/<id>`.
+- Importa com remapeamento de IDs de mídia, cria um novo ID de projeto e preserva camadas, fundos, narrações e avatar.
+- Mídias ausentes são removidas com segurança (camada, fundo ou narração) em vez de deixar referências quebradas.
+- Botão **Importar** no topo e botão **Exportar projeto** em cada card.
+- Validação real: exportar um projeto, importar o `.nova.zip` e abrir o editor com as 3 cenas.
+
+### Legendas SRT/VTT
+
+- `captionsToSrt` e `captionsToVtt` em `client/src/engine/captions.ts`.
+- Tempo absoluto da timeline, por cena, com offset de narração respeitado.
+- Botões “Baixar .srt” e “Baixar .vtt” no diálogo de exportação.
+- Também incluídas automaticamente no `.nova.zip` e no pacote de imagens.
+
+### Exportação em lote (pacote de imagens)
+
+- `client/src/engine/package.ts`.
+- O modo **Pacote** gera um ZIP com:
+  - todas as cenas em PNG para cada formato escolhido;
+  - `legendas.srt` e `legendas.vtt`.
+- Formatos disponíveis: Hotmart/YouTube 16:9, Reels/Stories 9:16, Feed 4:5, Quadrado 1:1, capa de blog e Pinterest.
+- Ideal para carrossel, feed, thumbnail e reaproveitamento de uma aula em várias redes.
+
+### Schema versionado
+
+- `PROJECT_SCHEMA_VERSION = 2` e `migrateProject` em `shared/editor.ts`.
+- Projetos antigos ganham `schemaVersion`, `narration.offset` e `background.startAt` automaticamente.
+- `getProject` e `listProjects` migram na leitura.
+- Projeto de versão futura é recusado com mensagem clara.
+
+### Validação em Chrome real
+
+Teste automatizado via Chrome DevTools Protocol:
+
+| Cenário | Resultado |
+|---|---|
+| Aula inicial de 22 s, exportação rápida | MP4 de 4,3 MB, sem erros no console. |
+| Aula com narração TTS, exportação rápida | MP4 H.264 1920×1080, áudio 48 kHz, duração 23,56 s, `ffprobe` válido. |
+| Pacote de imagens | ZIP com 9 PNGs (16:9, 9:16, 1:1) + SRT + VTT, 10,6 MB. |
+| SRT/VTT | Arquivos baixados e conteúdo conferido. |
+| `.nova.zip` | Exportado e reimportado; projeto abriu com as 3 cenas. |
+| Fallback | Mantido para navegadores sem os codecs necessários. |
+
+### Testes
+
+- **20 testes** passando.
+- `pnpm check` e `pnpm build` passando.
+- Novos testes: SRT/VTT e migração de projeto.
+
+### Limitações conhecidas
+
+- Em alguns Chromes Linux, o codificador **AAC não está disponível**; o MP4 sai com Opus e o diálogo avisa. Uma etapa futura pode transcodificar para AAC com `ffmpeg` local ou `ffmpeg.wasm`.
+- Vídeo em lote (várias resoluções de vídeo em um único clique) ainda não entrou; o lote atual cobre imagens + legendas.
+- A fila persistente de render (retomar após fechar a aba) ainda não entrou.
+- Docker não foi testado porque o ambiente não tem Docker instalado.

@@ -2,7 +2,14 @@
  * Captions: builds timed lines from transcription words (or from the script as
  * a fallback) and renders them as karaoke-style subtitles.
  */
-import type { CaptionSettings, Project, Scene, WordTiming } from "@shared/editor";
+import {
+  narrationLength,
+  sceneStartTimes,
+  type CaptionSettings,
+  type Project,
+  type Scene,
+  type WordTiming,
+} from "@shared/editor";
 
 export interface CaptionLine {
   words: WordTiming[];
@@ -155,4 +162,84 @@ export function drawCaptions(
   });
 
   ctx.restore();
+}
+
+export interface CaptionEntry {
+  start: number;
+  end: number;
+  text: string;
+}
+
+/** All visible caption lines with absolute timeline times. */
+export function captionEntries(project: Project): CaptionEntry[] {
+  const starts = sceneStartTimes(project);
+  const entries: CaptionEntry[] = [];
+
+  project.scenes.forEach((scene, index) => {
+    const sceneStart = starts[index];
+    const sceneDuration = Math.max(0.1, scene.duration);
+    const narrationDuration =
+      narrationLength(scene.narration) || sceneDuration;
+    const lines = buildCaptionLines(
+      scene.narration.words,
+      scene.narration.text,
+      narrationDuration,
+      project.captions.maxWordsPerLine,
+    );
+
+    for (const line of lines) {
+      const text = line.words
+        .map(word => word.word)
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!text) continue;
+      const start = sceneStart + Math.max(0, Math.min(sceneDuration, line.start));
+      const end = sceneStart + Math.max(0, Math.min(sceneDuration, line.end));
+      if (end <= start + 0.01) continue;
+      entries.push({ start, end, text });
+    }
+  });
+
+  return entries.sort((a, b) => a.start - b.start);
+}
+
+function timestamp(seconds: number, separator: "," | "."): string {
+  const totalMs = Math.max(0, Math.round(seconds * 1000));
+  const ms = totalMs % 1000;
+  const totalSeconds = Math.floor(totalMs / 1000);
+  const s = totalSeconds % 60;
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const m = totalMinutes % 60;
+  const h = Math.floor(totalMinutes / 60);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(
+    s,
+  ).padStart(2, "0")}${separator}${String(ms).padStart(3, "0")}`;
+}
+
+/** SRT file, ready for YouTube, Hotmart and most LMS platforms. */
+export function captionsToSrt(project: Project): string {
+  const entries = captionEntries(project);
+  return entries
+    .map(
+      (entry, index) =>
+        `${index + 1}\n${timestamp(entry.start, ",")} --> ${timestamp(
+          entry.end,
+          ",",
+        )}\n${entry.text}\n`,
+    )
+    .join("\n");
+}
+
+/** WebVTT file, ready for browsers, players and social platforms. */
+export function captionsToVtt(project: Project): string {
+  const entries = captionEntries(project);
+  return `WEBVTT\n\n${entries
+    .map(
+      entry =>
+        `${timestamp(entry.start, ".")} --> ${timestamp(entry.end, ".")}\n${
+          entry.text
+        }\n`,
+    )
+    .join("\n")}`;
 }

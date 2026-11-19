@@ -47,6 +47,10 @@ Docker o `HOST=0.0.0.0` já vem configurado e a porta é publicada explicitament
 | **Legendas automáticas** | Sincronizadas pelo tempo do áudio, direto na cena. |
 | **Imagens por IA** | Gerador aberto (Flux) sem cadastro. O plano gratuito libera 1 imagem a cada ~45s; o estúdio espera a fila sozinho. |
 | **Editor completo** | Cenas, camadas, formas, gradientes, Ken Burns, transições, carrossel, thumb, exportação de vídeo e PNG. |
+| **Exportação rápida** | MP4 com H.264 via WebCodecs em worker, mais rápido que o tempo real. Em navegadores sem os codecs, cai automaticamente para a gravação em tempo real. |
+| **Backup `.nova.zip`** | Exporte e importe o projeto completo com todas as mídias e legendas. |
+| **Legendas publicáveis** | Baixe `.srt` e `.vtt` com o tempo da timeline, prontos para YouTube, Hotmart e LMS. |
+| **Pacote de publicação** | ZIP com todas as cenas em PNG nos formatos 16:9, 9:16, 1:1, 4:5, blog ou Pinterest + legendas. |
 
 ## Motores de avatar profissionais (opcional)
 
@@ -110,8 +114,10 @@ data/                    chaves e vídeos renderizados (criado sozinho)
 
 ## Onde ficam os projetos
 
-Tudo é salvo no IndexedDB do navegador. Para levar para outro computador, exporte o
-vídeo ou as imagens. Os vídeos gerados pelos motores pagos ficam em `data/avatars/`.
+Tudo é salvo no IndexedDB do navegador. Use **Exportar projeto** no card do projeto
+para baixar um `.nova.zip` com o JSON, todas as mídias e as legendas — esse é o
+backup portátil e também serve para abrir o projeto em outro computador pelo botão
+**Importar**. Os vídeos gerados pelos motores pagos ficam em `data/avatars/`.
 
 ## Testes rápidos
 

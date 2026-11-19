@@ -65,6 +65,37 @@ export function exportSupport(): { canExport: boolean; extension: "mp4" | "webm"
   return { canExport, extension };
 }
 
+/** A project re-laid out for another output size, preserving all content. */
+export function scaleProjectToSize(
+  project: Project,
+  width: number,
+  height: number,
+): Project {
+  if (width === project.width && height === project.height) return project;
+  return {
+    ...project,
+    width,
+    height,
+    scenes: project.scenes.map(scene => ({
+      ...scene,
+      background: { ...scene.background },
+      narration: { ...scene.narration },
+      layers: scene.layers.map(layer => ({
+        ...layer,
+        x: (layer.x / project.width) * width,
+        y: (layer.y / project.height) * height,
+        w: (layer.w / project.width) * width,
+        h: (layer.h / project.height) * height,
+      })),
+    })),
+    captions: {
+      ...project.captions,
+      fontSize: (project.captions.fontSize / project.height) * height,
+      margin: (project.captions.margin / project.height) * height,
+    },
+  };
+}
+
 export async function exportVideo(project: Project, options: ExportOptions): Promise<ExportResult> {
   const { width, height, fps, videoBitsPerSecond, onProgress, signal } = options;
   const { mimeType, extension } = pickMimeType();
@@ -78,27 +109,7 @@ export async function exportVideo(project: Project, options: ExportOptions): Pro
   const ctx = canvas.getContext("2d", { alpha: false });
   if (!ctx) throw new Error("Não foi possível preparar a tela de renderização.");
 
-  const scaled: Project = {
-    ...project,
-    width,
-    height,
-    scenes: project.scenes.map(scene => ({
-      ...scene,
-      layers: scene.layers.map(layer => ({
-        ...layer,
-        x: (layer.x / project.width) * width,
-        y: (layer.y / project.height) * height,
-        w: (layer.w / project.width) * width,
-        h: (layer.h / project.height) * height,
-      })),
-      narration: { ...scene.narration },
-    })),
-    captions: {
-      ...project.captions,
-      fontSize: (project.captions.fontSize / project.height) * height,
-      margin: (project.captions.margin / project.height) * height,
-    },
-  };
+  const scaled = scaleProjectToSize(project, width, height);
 
   const player = new TimelinePlayer();
   await player.prepare(scaled);

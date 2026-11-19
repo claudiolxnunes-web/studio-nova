@@ -3,7 +3,7 @@
  * Everything stays in the browser (IndexedDB) so a lesson never leaves the
  * editor unless the person exports it.
  */
-import type { MediaAsset, Project } from "@shared/editor";
+import { migrateProject, type MediaAsset, type Project } from "@shared/editor";
 
 // Kept from the first version so projects saved before the rename stay readable.
 const DB_NAME = "estudio-de-aulas";
@@ -59,7 +59,14 @@ async function withStore<T>(
 
 export async function listProjects(): Promise<Project[]> {
   const result = await withStore<Project[]>(STORE_PROJECTS, "readonly", store => store.getAll());
-  const projects = result ?? [];
+  const projects = (result ?? []).map(project => {
+    try {
+      return migrateProject(project);
+    } catch (error) {
+      console.warn("[storage] projeto incompatível ignorado", project?.id, error);
+      return null;
+    }
+  }).filter((project): project is Project => project !== null);
   return projects.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
@@ -125,7 +132,12 @@ export async function requestPersistentStorage(): Promise<boolean> {
 }
 
 export async function getProject(id: string): Promise<Project | undefined> {
-  return withStore<Project>(STORE_PROJECTS, "readonly", store => store.get(id));
+  const project = await withStore<Project>(
+    STORE_PROJECTS,
+    "readonly",
+    store => store.get(id),
+  );
+  return project ? migrateProject(project) : undefined;
 }
 
 export interface StoredMedia {

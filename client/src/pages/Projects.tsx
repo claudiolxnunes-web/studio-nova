@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Archive,
   ArrowUpRight,
   BookOpen,
   Copy,
@@ -12,6 +13,7 @@ import {
   Radio,
   Sparkles,
   Trash2,
+  Upload,
   UserRound,
   Wand2,
 } from "lucide-react";
@@ -46,6 +48,8 @@ export default function Projects() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
+  const [importing, setImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
   const [, navigate] = useLocation();
 
   const refresh = useCallback(async () => {
@@ -92,6 +96,43 @@ export default function Projects() {
     await refresh();
   };
 
+  const exportArchive = async (project: Project) => {
+    try {
+      const { exportProjectArchive, projectArchiveFileName } = await import(
+        "@/lib/projectArchive"
+      );
+      const blob = await exportProjectArchive(project);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = projectArchiveFileName(project);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } catch (error) {
+      window.alert(
+        `Não foi possível exportar o projeto: ${(error as Error).message}`,
+      );
+    }
+  };
+
+  const importArchive = async (file: File) => {
+    setImporting(true);
+    try {
+      const { importProjectArchive } = await import("@/lib/projectArchive");
+      const project = await importProjectArchive(file);
+      await refresh();
+      navigate(`/aula/${project.id}`);
+    } catch (error) {
+      window.alert(
+        `Não foi possível importar o projeto: ${(error as Error).message}`,
+      );
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const kinds: ProjectKind[] = [
     "aula",
     "post",
@@ -129,6 +170,29 @@ export default function Projects() {
             <BookOpen size={13} />{" "}
             <span className="hidden sm:inline">Tutorial</span>
           </Link>
+          <button
+            type="button"
+            className="btn-ghost whitespace-nowrap !px-2 !py-1.5 text-[11.5px]"
+            onClick={() => importInputRef.current?.click()}
+            disabled={importing}
+            title="Importar projeto .nova.zip"
+          >
+            <Upload size={13} />{" "}
+            <span className="hidden sm:inline">
+              {importing ? "Importando…" : "Importar"}
+            </span>
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".zip,.nova.zip,application/zip"
+            className="hidden"
+            onChange={event => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file) void importArchive(file);
+            }}
+          />
           <button
             type="button"
             className="btn-primary whitespace-nowrap !px-2.5 !py-1.5 text-[11.5px] sm:!px-3.5 sm:!py-2 sm:text-[12.5px]"
@@ -359,6 +423,14 @@ export default function Projects() {
                       </button>
                       <button
                         type="button"
+                        className="icon-btn"
+                        onClick={() => void exportArchive(project)}
+                        title="Exportar projeto (.nova.zip) com mídias e legendas"
+                      >
+                        <Archive size={13} />
+                      </button>
+                      <button
+                        type="button"
                         className="icon-btn hover:!text-red-300"
                         onClick={() => void remove(project)}
                         title="Excluir"
@@ -398,9 +470,11 @@ export default function Projects() {
         </section>
 
         <p className="mt-8 text-center text-[10.5px] text-muted-foreground/70">
-          Seus projetos ficam salvos neste navegador (IndexedDB). Nada é enviado
-          para servidores de terceiros, exceto o texto enviado para gerar a
-          narração e a imagem gerada por IA.
+          Seus projetos ficam salvos neste navegador (IndexedDB). Use{" "}
+          <strong>Exportar projeto</strong> para baixar um arquivo{" "}
+          <code>.nova.zip</code> com todas as mídias e legendas — é o seu backup
+          portátil. Nada é enviado para servidores de terceiros, exceto o texto
+          enviado para gerar a narração e a imagem gerada por IA.
         </p>
       </main>
     </div>
