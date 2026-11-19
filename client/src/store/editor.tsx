@@ -43,12 +43,7 @@ import {
 import { generateAiImage, generateNarration, transcribe } from "@/lib/api";
 import { estimateWordTimings } from "@/lib/timing";
 import { importFiles } from "@/lib/mediaImport";
-import {
-  deleteProject,
-  getProject,
-  releaseMediaIfUnused,
-  saveProject,
-} from "@/lib/storage";
+import { deleteProject, getProject, saveProject } from "@/lib/storage";
 import { TimelinePlayer, decodeNarration } from "@/engine/audio";
 import { mediaRegistry } from "@/engine/media";
 
@@ -158,6 +153,7 @@ export function useEditor(projectId: string | null): EditorApi {
   const timeRef = useRef(0);
   const playingRef = useRef(false);
   const playerRef = useRef<TimelinePlayer | null>(null);
+  const deletingRef = useRef<string | null>(null);
   const historyRef = useRef<{ past: Project[]; future: Project[] }>({
     past: [],
     future: [],
@@ -177,6 +173,7 @@ export function useEditor(projectId: string | null): EditorApi {
     // Never let an undo/redo from the previous project leak into this one.
     historyRef.current = { past: [], future: [] };
     lastHistoryRef.current = null;
+    deletingRef.current = null;
     setHistoryVersion(version => version + 1);
     setProject(null);
     setSceneIndexState(0);
@@ -229,6 +226,7 @@ export function useEditor(projectId: string | null): EditorApi {
     if (!project) return;
     setSaveState("saving");
     const timer = window.setTimeout(async () => {
+      if (deletingRef.current === project.id) return;
       try {
         await saveProject(project);
         setSaveState("saved");
@@ -245,7 +243,7 @@ export function useEditor(projectId: string | null): EditorApi {
   useEffect(() => {
     const flush = () => {
       const current = projectRef.current;
-      if (!current) return;
+      if (!current || deletingRef.current === current.id) return;
       void saveProject(current).catch(error => {
         console.error("[save:flush]", error);
       });
@@ -1091,8 +1089,10 @@ export function useEditor(projectId: string | null): EditorApi {
           }
         });
       });
+      // Keep the blob for now: removing an asset is undoable, and another
+      // duplicated project may still reference it. Orphan blobs are collected
+      // at startup and when a project is deleted.
       mediaRegistry.forget(id);
-      await releaseMediaIfUnused(id, projectRef.current?.id ?? null);
     },
     [apply],
   );
@@ -1137,8 +1137,10 @@ export function useEditor(projectId: string | null): EditorApi {
   );
 
   const deleteCurrentProject = useCallback(async () => {
-    if (!projectRef.current) return;
-    await deleteProject(projectRef.current.id);
+    const current = projectRef.current;
+    if (!current) return;
+    deletingRef.current = current.id;
+    await deleteProject(current.id);
   }, []);
 
   return useMemo<EditorApi>(

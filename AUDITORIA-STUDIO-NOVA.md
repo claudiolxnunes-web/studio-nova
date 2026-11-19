@@ -395,3 +395,51 @@ O Studio Nova já tem o mais difícil: **uma visão de produto clara, um modelo 
 5. publicar com metadados e revisão.
 
 Se a ordem acima for respeitada, o produto deixa de ser um protótipo promissor e passa a ser um estúdio que um criador profissional usa todos os dias.
+
+---
+
+## 11. Sprint 0 executado
+
+**Data da execução:** 19/11/2026
+
+### O que foi corrigido no código
+
+- **Split de cena:** a segunda metade agora guarda `narration.offset` e as palavras são fatiadas; camadas de vídeo e vídeo de fundo também recebem o deslocamento.
+- **Áudio:** a narração é limitada à duração da cena e o player para as fontes no fim da timeline.
+- **Vídeo de fundo:** `syncVideoLayers` passou a sincronizar `scene.background` do tipo vídeo, com loop e pausa quando inativo.
+- **PNG com vídeo:** a exportação garante as mídias e aguarda o `seeked` antes de desenhar o quadro.
+- **Mídia:** excluir um projeto agora coleta blobs órfãos; remover uma mídia não apaga mais o blob (preserva undo e projetos duplicados).
+- **Autosave:** flush em `pagehide`/`visibilitychange`; histórico limpo ao trocar de projeto; `navigator.storage.persist()` solicitado.
+- **Undo:** digitação em roteiro, texto de camada e nome do projeto é agrupada em um único passo.
+- **Criar vídeo:** extensão do download agora segue o container real (`.mp4` ou `.webm`).
+- **Sombra de imagem:** passou a ser desenhada fora do clip, com cache de silhueta.
+- **Fundo de texto:** largura corrigida para incluir os dois lados do padding.
+- **Timeline:** a barra agora representa a cobertura da narração, não 100% fixo.
+- **MediaPipe:** importação dinâmica e análise facial apenas para avatar com foto. Bundle inicial caiu de ~838 KB para ~699 KB e o chunk do MediaPipe (~144 KB) só carrega quando necessário.
+- **Segurança/operação:** servidor escuta em `127.0.0.1` por padrão; Docker usa `HOST=0.0.0.0` explicitamente, roda como `node`, tem healthcheck e ignora `data/`/`.manus-logs`.
+- **Arquivos de avatar:** rota usa `createReadStream` e implementa `Range`.
+- **Galeria:** download externo ganhou timeout.
+- **Confirmações:** exclusão de projeto e remoção de mídia pedem confirmação.
+- **Git + CI:** repositório inicializado e workflow em `.github/workflows/ci.yml` rodando typecheck, testes e build.
+
+### Novos testes
+
+- `client/src/lib/timing.test.ts` — distribuição de palavras.
+- `client/src/engine/captions.test.ts` — agrupamento, pontuação e fallback.
+- `client/src/lib/scriptVideo.test.ts` — divisão de roteiro.
+- `shared/editor.test.ts` — presets e formatos.
+- `vitest.config.ts` agora inclui testes de `client/` e `shared/`.
+
+### Validação final
+
+| Verificação | Resultado |
+|---|---|
+| `npx tsc --noEmit` | Passou. |
+| `npx vitest run` | 6 arquivos, **17 testes**, todos passando. |
+| `pnpm build` | Passou (client + server). |
+| Servidor de produção | `/api/health` e `/` respondem 200 em `127.0.0.1`. |
+| Git | Primeiro commit criado; árvore limpa após o Sprint 0. |
+
+### O que ficou para o Sprint 1
+
+Exportação WebCodecs em worker, fila de render, arquivo `.nova.zip`, SRT/VTT, referência de mídia mais sofisticada, schema versionado e exportação em lote.

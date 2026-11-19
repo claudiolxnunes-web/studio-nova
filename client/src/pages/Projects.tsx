@@ -59,7 +59,9 @@ export default function Projects() {
     // Local-first only works if the browser is asked to keep the data and if
     // blobs left behind by old versions are cleaned up.
     void requestPersistentStorage();
-    void garbageCollectMedia();
+    void garbageCollectMedia().catch(error => {
+      console.warn("[storage] limpeza adiada", error);
+    });
   }, [refresh]);
 
   const create = async (kind: ProjectKind, title?: string) => {

@@ -67,19 +67,6 @@ export async function saveProject(project: Project): Promise<void> {
   await withStore(STORE_PROJECTS, "readwrite", store => store.put(project));
 }
 
-/** True when the project still points at the asset, even if metadata is stale. */
-function projectUsesMedia(project: Project, mediaId: string): boolean {
-  if (project.media.some(asset => asset.id === mediaId)) return true;
-  return project.scenes.some(scene => {
-    if (scene.narration.assetId === mediaId) return true;
-    if (scene.background.mediaId === mediaId) return true;
-    return scene.layers.some(layer => {
-      if ("mediaId" in layer && layer.mediaId === mediaId) return true;
-      return layer.kind === "avatar" && layer.photoMediaId === mediaId;
-    });
-  });
-}
-
 export async function deleteProject(id: string): Promise<void> {
   await withStore(STORE_PROJECTS, "readwrite", store => store.delete(id));
   // Media can be shared with duplicated projects. Only remove the blobs that
@@ -112,26 +99,16 @@ export async function garbageCollectMedia(): Promise<number> {
     (await withStore<StoredMedia[]>(STORE_MEDIA, "readonly", store =>
       store.getAll(),
     )) ?? [];
-  const orphans = stored.filter(record => !referenced.has(record.id));
+  // Only collect assets that have existed for a while. This avoids deleting a
+  // blob imported in another tab whose project has not been saved yet.
+  const cutoff = Date.now() - 10 * 60 * 1000;
+  const orphans = stored.filter(
+    record =>
+      !referenced.has(record.id) &&
+      (record.asset?.createdAt ?? 0) < cutoff,
+  );
   for (const orphan of orphans) await deleteMediaBlob(orphan.id);
   return orphans.length;
-}
-
-/**
- * Called when the user removes an asset from one project. The same blob may be
- * used by a duplicated project, so it is only deleted when no other project
- * references it.
- */
-export async function releaseMediaIfUnused(
-  mediaId: string,
-  projectId: string | null,
-): Promise<boolean> {
-  const projects = await listProjects();
-  const usedElsewhere = projects.some(
-    project => project.id !== projectId && projectUsesMedia(project, mediaId),
-  );
-  if (!usedElsewhere) await deleteMediaBlob(mediaId);
-  return !usedElsewhere;
 }
 
 /** Ask the browser to keep IndexedDB data even under storage pressure. */
