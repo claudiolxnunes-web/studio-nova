@@ -240,6 +240,9 @@ export default function Projects() {
               <Link href="/roteiro" className="btn-ghost !py-2 text-[12px]">
                 <Wand2 size={14} /> Colar roteiro e gerar vídeo
               </Link>
+              <Link href="/postagem" className="btn-ghost !py-2 text-[12px]">
+                <ImageIcon size={14} /> Colar roteiro e gerar post
+              </Link>
               <Link href="/criar-video" className="btn-3d !py-2 text-[12px]">
                 <Play size={14} /> Avatar fala o texto
               </Link>

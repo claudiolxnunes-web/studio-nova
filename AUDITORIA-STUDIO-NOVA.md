@@ -518,3 +518,55 @@ Teste automatizado via Chrome DevTools Protocol:
 - Vídeo em lote (várias resoluções de vídeo em um único clique) ainda não entrou; o lote atual cobre imagens + legendas.
 - A fila persistente de render (retomar após fechar a aba) ainda não entrou.
 - Docker não foi testado porque o ambiente não tem Docker instalado.
+
+---
+
+## 13. Postagem pronta a partir do roteiro
+
+**Data da execução:** 19/11/2026
+
+### O fluxo
+
+Nova página `/postagem` (link “Colar roteiro e gerar post” na home):
+
+1. cole o roteiro;
+2. escolha **Post único**, **Carrossel** ou **Story**;
+3. escolha o formato (Feed 4:5, Quadrado, Stories, Pinterest ou capa de blog);
+4. informe um tema de imagens (opcional);
+5. clique em **Gerar postagem pronta**.
+
+### O que é gerado
+
+- Capa com o gancho do roteiro.
+- Slides de conteúdo com título curto + explicação.
+- Slide final de CTA (“Salve para consultar depois”).
+- Fotos gratuitas do Openverse (e Pexels/Pixabay, se configurados) aplicadas como fundo com escurecimento para manter a leitura.
+- Consultas visuais traduzidas e organizadas por categoria (produtividade, estudos, finanças, saúde, tecnologia etc.), porque o Openverse tem resultados muito melhores em inglês e com termos amplos (“workspace”, “notebook”, “planning”).
+- Legenda completa para colar na rede.
+- Hashtags sugeridas a partir das palavras-chave e do tema.
+- Textos alternativos por slide.
+- ZIP com todos os slides em PNG + `legenda.txt` + `hashtags.txt` + `textos-alternativos.txt` (+ SRT/VTT quando houver narração).
+- Projeto salvo no editor para ajustes posteriores.
+
+### Arquivos novos
+
+- `client/src/lib/scriptPost.ts` — divisão do roteiro, busca de imagens, montagem dos slides e legenda.
+- `client/src/pages/ScriptPost.tsx` — página e resultado pronto para publicar.
+- `exportPostPackage` em `client/src/engine/package.ts` — ZIP da postagem.
+
+### Validação real em Chrome
+
+| Cenário | Resultado |
+|---|---|
+| Carrossel de 5 slides a partir de roteiro | Capa + 3 slides de conteúdo + CTA, com imagens coerentes de workspace/notebook/planejamento. |
+| Legenda + hashtags | Arquivos `legenda.txt` e `hashtags.txt` corretos. |
+| Pacote ZIP | 5 PNGs 1080×1350 + legenda + hashtags + alt text; ~7,5 MB. |
+| Sem narração | SRT/VTT omitidos corretamente do pacote. |
+| Console | Nenhum erro. |
+
+### Próximas evoluções naturais
+
+- Escolher uma imagem diferente por clique (trocar capa/slide).
+- Prévia editável do texto antes de gerar.
+- Agendamento/publicação direta.
+- Geração de **aula em vídeo** no mesmo fluxo (o `/roteiro` já faz a base e pode ganhar o mesmo botão “baixar pronto”).

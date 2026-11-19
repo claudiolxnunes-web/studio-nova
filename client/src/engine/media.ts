@@ -147,8 +147,20 @@ class MediaRegistry {
           const image = new Image();
           image.decoding = "async";
           await new Promise<void>((resolve, reject) => {
-            image.onload = () => resolve();
-            image.onerror = () => reject(new Error("Imagem inválida"));
+            let settled = false;
+            const finish = (error?: Error) => {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(timer);
+              if (error) reject(error);
+              else resolve();
+            };
+            const timer = window.setTimeout(
+              () => finish(new Error("Tempo esgotado ao carregar a imagem")),
+              10_000,
+            );
+            image.onload = () => finish();
+            image.onerror = () => finish(new Error("Imagem inválida"));
             image.src = url;
           });
           entry.image = image;

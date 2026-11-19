@@ -97,6 +97,25 @@ Na página inicial, clique em **Avatar fala o texto** (ou acesse diretamente htt
 
 A narração é criada automaticamente e o vídeo é renderizado no seu navegador — sem servidor externo, sem créditos, sem precisar editar nada. Ao terminar, baixe o MP4.
 
+## Postagem pronta a partir do roteiro
+
+Na página inicial, clique em **Colar roteiro e gerar post** (ou acesse
+http://localhost:3000/postagem):
+
+1. Cole o texto que você quer publicar.
+2. Escolha **Post único**, **Carrossel** ou **Story**.
+3. Escolha o formato: Feed 4:5, Quadrado 1:1, Stories 9:16, Pinterest 2:3 ou capa
+   de blog.
+4. Se quiser, informe um tema para as imagens (ex.: “produtividade”, “estudos”,
+   “finanças”).
+5. Clique em **Gerar postagem pronta**.
+
+O estúdio monta a capa, os slides, a chamada final, busca fotos gratuitas no
+Openverse (e Pexels/Pixabay se você configurou as chaves), gera a legenda e as
+hashtags. No fim, você baixa um ZIP com todos os PNGs + `legenda.txt` +
+`hashtags.txt` + `textos-alternativos.txt` e pode abrir o projeto no editor para
+ajustar o que quiser.
+
 ## Estrutura
 
 ```

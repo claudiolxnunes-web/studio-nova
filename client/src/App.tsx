@@ -8,6 +8,7 @@ import EditorPage from "./pages/EditorPage";
 import CriarVideo from "./pages/CriarVideo";
 import Help from "./pages/Help";
 import ScriptVideo from "./pages/ScriptVideo";
+import ScriptPost from "./pages/ScriptPost";
 import Projects from "./pages/Projects";
 import AvatarStudio from "./pages/AvatarStudio";
 import Settings from "./pages/Settings";
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/ajustes" component={Settings} />
       <Route path="/ajuda" component={Help} />
       <Route path="/roteiro" component={ScriptVideo} />
+      <Route path="/postagem" component={ScriptPost} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
