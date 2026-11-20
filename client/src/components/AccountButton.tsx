@@ -117,8 +117,8 @@ export default function AccountButton() {
             </p>
           </div>
           <div className="px-2 py-2 text-[10px] leading-relaxed text-muted-foreground">
-            Sessão Google conectada ao Supabase. A sincronização dos projetos
-            será ativada na próxima etapa.
+            Sessão Google conectada. Na home, use o botão <strong>Nuvem</strong>{" "}
+            para enviar e baixar projetos com as mídias.
           </div>
           <button
             type="button"

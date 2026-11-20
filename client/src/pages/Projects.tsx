@@ -29,7 +29,10 @@ import {
   type ProjectKind,
 } from "@shared/editor";
 import AccountButton from "@/components/AccountButton";
+import CloudSyncButton from "@/components/CloudSyncButton";
 import InstallAppButton from "@/components/InstallAppButton";
+import { useAuth } from "@/contexts/AuthContext";
+import { deleteCloudProject } from "@/lib/cloudSync";
 import { formatClock } from "@/lib/format";
 import {
   deleteProject,
@@ -55,6 +58,7 @@ export default function Projects() {
   const [importing, setImporting] = useState(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const [, navigate] = useLocation();
+  const { user } = useAuth();
 
   const refresh = useCallback(async () => {
     const items = await listProjects();
@@ -93,10 +97,16 @@ export default function Projects() {
 
   const remove = async (project: Project) => {
     const ok = window.confirm(
-      `Excluir "${project.name}"? As mídias usadas só por este projeto também serão removidas.`,
+      `Excluir "${project.name}"? As mídias usadas só por este projeto também serão removidas.` +
+        (user ? "\n\nO projeto também será removido da nuvem." : ""),
     );
     if (!ok) return;
     await deleteProject(project.id);
+    if (user) {
+      void deleteCloudProject(project.id).catch(error => {
+        console.warn("[cloud] projeto local excluído, mas a cópia na nuvem falhou", error);
+      });
+    }
     await refresh();
   };
 
@@ -166,6 +176,7 @@ export default function Projects() {
             <Sparkles size={13} />{" "}
             <span className="hidden sm:inline">Avatar Studio</span>
           </Link>
+          <CloudSyncButton onSynced={refresh} />
           <AccountButton />
           <InstallAppButton />
           <Link

@@ -47,6 +47,7 @@ import {
 } from "@/lib/api";
 import { estimateWordTimings } from "@/lib/timing";
 import { importFiles } from "@/lib/mediaImport";
+import { deleteCloudProject } from "@/lib/cloudSync";
 import { deleteProject, getProject, saveProject } from "@/lib/storage";
 import { TimelinePlayer, decodeNarration } from "@/engine/audio";
 import { mediaRegistry } from "@/engine/media";
@@ -1145,6 +1146,9 @@ export function useEditor(projectId: string | null): EditorApi {
     if (!current) return;
     deletingRef.current = current.id;
     await deleteProject(current.id);
+    void deleteCloudProject(current.id).catch(error => {
+      console.warn("[cloud] projeto local excluído, mas a cópia na nuvem falhou", error);
+    });
   }, []);
 
   return useMemo<EditorApi>(

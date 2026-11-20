@@ -117,9 +117,16 @@ Clique em **Entrar com Gmail**.
 - schema, bucket e políticas;
 - modo local continua funcionando sem login.
 
-Ainda falta implementar a sincronização dos projetos e o upload das mídias para
-o bucket `media`. Isso será feito depois que o login com Google estiver
-funcionando.
+A sincronização já está implementada no botão **Nuvem** da home:
+
+- envia para o Supabase os projetos locais mais novos;
+- baixa para o navegador os projetos da nuvem mais novos;
+- sobe as mídias para o bucket `media`, em `userId/projectId/assetId`;
+- baixa as mídias que faltam ao abrir um projeto em outro computador;
+- exclui a cópia na nuvem quando o projeto é apagado com a sessão ativa.
+
+A primeira sincronização pode demorar se houver muitos vídeos, pois todos os
+blobs serão enviados. As próximas pulam as mídias que já estão na nuvem.
 
 ## 5. Segurança
 

@@ -768,3 +768,36 @@ no mesmo lugar.
 
 O app já mostra o botão de login e a sessão, mas o Google ainda está desativado
 no projeto Supabase no momento desta auditoria.
+
+---
+
+## 19. Login Google validado e sincronização em nuvem
+
+**Data da execução:** 20/11/2026
+
+- Schema executado no Supabase; banco confirmado com:
+  - `projects`, `profiles`, `project_assets`;
+  - bucket privado `media`;
+  - permissões para `authenticated` e RLS.
+- `supabase/fix-existing.sql` criado para corrigir bancos que já receberam o
+  schema mas ficaram sem grants ou sem o bucket.
+- OAuth Client do Google recriado como **Aplicativo da Web** (o primeiro era
+  **Computador/Desktop**, que não tem redirect URI de servidor).
+- Google ativo no Supabase; teste de autorização retornou `302` para
+  `accounts.google.com`.
+- Login com Gmail validado no navegador.
+- `client/src/lib/cloudSync.ts`:
+  - envia projetos mais novos para `projects`;
+  - baixa projetos mais novos da nuvem;
+  - sobe mídias para `media/<userId>/<projectId>/<assetId>`;
+  - registra metadados em `project_assets`;
+  - baixa mídias ausentes ao abrir em outro computador;
+  - remove a cópia na nuvem ao excluir o projeto com sessão ativa.
+- `CloudSyncButton` na home:
+  - botão **Nuvem**;
+  - progresso por projeto;
+  - resumo de enviados, baixados, sem mudança e avisos.
+- Comparação usa `updatedAt` com tolerância de 1 segundo para evitar
+  ping-pong entre relógios.
+- Exclusão local também tenta excluir a cópia na nuvem.
+- Testes: 41 passando; `pnpm check` e `pnpm build` OK.
