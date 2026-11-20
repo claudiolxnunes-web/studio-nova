@@ -208,6 +208,45 @@ server/                  Express: voz, imagem, avatares e transcrição
 data/                    chaves e vídeos renderizados (criado sozinho)
 ```
 
+## Instalar como aplicativo (PWA)
+
+O Studio Nova já tem manifest, ícones e service worker. Para instalar:
+
+1. Gere a versão de produção:
+
+```bash
+pnpm build
+pnpm start
+```
+
+2. Abra:
+
+```text
+http://localhost:3000
+```
+
+3. Clique em **Instalar app** no topo da home ou use o ícone de instalação do
+   Chrome/Edge na barra de endereço.
+
+4. Escolha **Instalar Studio Nova**.
+
+O app abre em uma janela própria e fica no menu de aplicativos do sistema.
+No Android use **Adicionar à tela inicial**; no iPhone, **Compartilhar →
+Adicionar à Tela de Início**.
+
+> A instalação exige `localhost` ou HTTPS. Para instalar no celular, publique o
+> Studio Nova em um endereço HTTPS (por exemplo, com um túnel seguro) ou use um
+> servidor com domínio próprio. O service worker guarda a interface, mas voz,
+> IA e exportação continuam precisando do servidor rodando.
+
+## Login com Gmail
+
+O login com Gmail não é necessário para instalar o app. Ele será usado para
+sincronizar projetos e mídias na nuvem via **Supabase Auth + Google OAuth**.
+Para ativar, será preciso criar um projeto no Supabase, habilitar o provedor
+Google e informar o Client ID/Secret do Google Cloud. O Studio Nova continua
+funcionando localmente sem login.
+
 ## Onde ficam os projetos
 
 Tudo é salvo no IndexedDB do navegador. Use **Exportar projeto** no card do projeto

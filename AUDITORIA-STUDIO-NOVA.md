@@ -711,3 +711,27 @@ no mesmo lugar.
   (`foto-autor-unsplash.ext`), preservando atribuição na biblioteca.
 - Testes de extração de ID cobrem ID bruto, link público e link da API.
 - Validação: 35 testes passando e build OK.
+
+---
+
+## 17. Instalação como aplicativo (PWA)
+
+**Data da execução:** 20/11/2026
+
+- `manifest.webmanifest` com nome, ícones 192/512/maskable, tema e atalhos.
+- Service worker `sw.js`:
+  - cache do app shell e de assets estáticos;
+  - `/api/` nunca é cacheado;
+  - navegação network-first com fallback offline;
+  - HMR e módulos do Vite são ignorados.
+- Ícones gerados a partir de `logo.png` (192, 512, maskable e Apple Touch).
+- Botão **Instalar app** na home, com instruções para Chrome/Edge, Android e
+  iPhone.
+- Registro do service worker em `client/src/main.tsx`.
+- Validação com Chrome DevTools:
+  - manifest carregado;
+  - service worker registrado;
+  - `Page.getInstallabilityErrors` retornou **zero erros**;
+  - console sem erros.
+- O login com Gmail fica para a etapa do Supabase (Auth + Google OAuth). Não é
+  necessário para instalar o app.

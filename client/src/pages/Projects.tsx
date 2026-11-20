@@ -28,6 +28,7 @@ import {
   type Project,
   type ProjectKind,
 } from "@shared/editor";
+import InstallAppButton from "@/components/InstallAppButton";
 import { formatClock } from "@/lib/format";
 import {
   deleteProject,
@@ -164,6 +165,7 @@ export default function Projects() {
             <Sparkles size={13} />{" "}
             <span className="hidden sm:inline">Avatar Studio</span>
           </Link>
+          <InstallAppButton />
           <Link
             href="/ferramentas"
             className="btn-ghost !px-2 !py-1.5 text-[11.5px]"
