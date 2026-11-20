@@ -355,11 +355,55 @@ async function pexelsSearch(
 interface UnsplashPhoto {
   id: string;
   alt_description?: string;
+  description?: string;
   width: number;
   height: number;
   user?: { name?: string };
   links: { html: string; download_location: string };
   urls: { raw: string; full: string; regular: string; small: string };
+}
+
+/**
+ * Accepts a raw ID, an api.unsplash.com link or a public unsplash.com link
+ * (`.../photos/description-KR2mdHJ5qMg`).
+ */
+export function extractUnsplashId(input: string): string | null {
+  const value = input.trim();
+  if (!value) return null;
+  if (/^[A-Za-z0-9_-]{5,}$/.test(value)) return value;
+
+  try {
+    const url = new URL(value);
+    const parts = url.pathname.split("/").filter(Boolean);
+    const last = parts[parts.length - 1] ?? "";
+    const candidate = last.includes("-")
+      ? last.slice(last.lastIndexOf("-") + 1)
+      : last;
+    return /^[A-Za-z0-9_-]{5,}$/.test(candidate) ? candidate : null;
+  } catch {
+    return null;
+  }
+}
+
+function unsplashPhotoItem(photo: UnsplashPhoto): StockItem {
+  const file = photo.urls.full || photo.urls.regular;
+  const page = new URL(photo.links.html);
+  page.searchParams.set("utm_source", "studio_nova");
+  page.searchParams.set("utm_medium", "referral");
+  return {
+    id: `unsplash-${photo.id}`,
+    provider: "unsplash",
+    kind: "photo",
+    title: photo.alt_description || photo.description || "Foto Unsplash",
+    author: photo.user?.name ?? "Unsplash",
+    pageUrl: page.toString(),
+    thumb: photo.urls.small,
+    file,
+    token: sign(file),
+    trigger: photo.links.download_location,
+    width: photo.width,
+    height: photo.height,
+  };
 }
 
 async function unsplashSearch(
@@ -395,24 +439,7 @@ async function unsplashSearch(
     kind: "photo",
     page,
     total: payload.total ?? 0,
-    items: (payload.results ?? []).map(photo => {
-      const file = photo.urls.full || photo.urls.regular;
-      return {
-        id: `unsplash-${photo.id}`,
-        provider: "unsplash" as const,
-        kind: "photo" as const,
-        title: photo.alt_description || "Foto Unsplash",
-        author: photo.user?.name ?? "Unsplash",
-        pageUrl: photo.links.html,
-        thumb: photo.urls.small,
-        file,
-        token: sign(file),
-        // Unsplash asks apps to ping this endpoint whenever a photo is downloaded.
-        trigger: photo.links.download_location,
-        width: photo.width,
-        height: photo.height,
-      };
-    }),
+    items: (payload.results ?? []).map(unsplashPhotoItem),
   };
 }
 
@@ -528,6 +555,49 @@ export function registerStockRoutes(app: Express): void {
       res.json(stockStatus(config));
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  app.get("/api/stock/unsplash/photo", async (req: Request, res: Response) => {
+    const raw = asString(req.query.q).trim();
+    const id = extractUnsplashId(raw);
+    if (!id) {
+      res.status(400).json({ error: "Informe um ID ou link de foto do Unsplash." });
+      return;
+    }
+    try {
+      const keys = await readStockKeys();
+      if (!keys.unsplash) {
+        res.status(400).json({
+          error: "Configure a chave gratuita do Unsplash em Ajustes.",
+          missing: "unsplash",
+        });
+        return;
+      }
+      const response = await fetch(
+        `https://api.unsplash.com/photos/${encodeURIComponent(id)}`,
+        {
+          headers: {
+            Authorization: `Client-ID ${keys.unsplash}`,
+            "Accept-Version": "v1",
+            Accept: "application/json",
+          },
+          signal: AbortSignal.timeout(20_000),
+        },
+      );
+      if (!response.ok) {
+        res.status(502).json({
+          error:
+            response.status === 404
+              ? "Foto não encontrada no Unsplash."
+              : friendly(response.status, "Unsplash"),
+        });
+        return;
+      }
+      const photo = (await response.json()) as UnsplashPhoto;
+      res.json({ item: unsplashPhotoItem(photo) });
+    } catch (error) {
+      res.status(502).json({ error: (error as Error).message });
     }
   });
 

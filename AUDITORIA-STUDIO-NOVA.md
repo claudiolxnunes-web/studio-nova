@@ -693,3 +693,21 @@ no mesmo lugar.
 - O Tripo gera objetos 3D, não avatar falante/lip sync.
 - A camada 3D nativa no editor (Three.js) ainda não entrou; hoje o fluxo entrega
   GLB + preview + download.
+
+---
+
+## 16. Unsplash por ID/link
+
+**Data da execução:** 20/11/2026
+
+- Novo endpoint `GET /api/stock/unsplash/photo?q=<id-ou-link>`:
+  - aceita ID bruto (`pFqrYbhIAXs`), link público do Unsplash ou link da API;
+  - consulta `https://api.unsplash.com/photos/{id}` com a chave do usuário;
+  - normaliza para o mesmo `StockItem` da busca;
+  - adiciona UTM `utm_source=studio_nova&utm_medium=referral` ao link do fotógrafo;
+  - mantém `download_location` como trigger de download.
+- Campo **“Colar link ou ID do Unsplash”** na aba Mídia.
+- O nome do arquivo importado agora inclui o crédito do fotógrafo
+  (`foto-autor-unsplash.ext`), preservando atribuição na biblioteca.
+- Testes de extração de ID cobrem ID bruto, link público e link da API.
+- Validação: 35 testes passando e build OK.

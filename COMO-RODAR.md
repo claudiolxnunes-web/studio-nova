@@ -154,6 +154,15 @@ A galeria tem filtro de orientação (horizontal, vertical, quadrado), sugestõe
 paginação. Cada clique em uma miniatura baixa o arquivo em alta resolução pelo servidor
 local e adiciona à biblioteca. As chaves nunca vão para o navegador.
 
+### Importar uma foto específica do Unsplash
+
+Na aba **Mídia**, cole um link ou ID do Unsplash no campo
+**“Colar link ou ID do Unsplash”** e clique em **Importar**. O Studio Nova consulta
+`/photos/{id}` com a sua chave, mostra a foto e permite adicioná-la à biblioteca.
+O nome do arquivo importado inclui o crédito do fotógrafo; o link de download
+aciona o endpoint de download exigido pelo Unsplash. Exemplo de ID:
+`pFqrYbhIAXs`.
+
 ## Criar vídeo — um clique e pronto
 
 Na página inicial, clique em **Avatar fala o texto** (ou acesse diretamente http://localhost:3000/criar-video). Essa é a tela mais simples do estúdio:

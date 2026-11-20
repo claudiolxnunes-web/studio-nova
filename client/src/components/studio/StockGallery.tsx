@@ -12,6 +12,7 @@ import { useEditorContext } from "@/store/editor";
 import {
   downloadStockItem,
   fetchStockStatus,
+  fetchUnsplashPhoto,
   searchStock,
   type StockItem,
   type StockKind,
@@ -82,6 +83,8 @@ export default function StockGallery() {
   const [importedId, setImportedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [unsplashInput, setUnsplashInput] = useState("");
+  const [unsplashLoading, setUnsplashLoading] = useState(false);
 
   useEffect(() => {
     void fetchStockStatus()
@@ -138,6 +141,28 @@ export default function StockGallery() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const importUnsplashLink = async () => {
+    if (!unsplashInput.trim()) {
+      setError("Cole o link ou o ID da foto do Unsplash.");
+      return;
+    }
+    setUnsplashLoading(true);
+    setError(null);
+    try {
+      const item = await fetchUnsplashPhoto(unsplashInput);
+      setProvider("unsplash");
+      setKind("photo");
+      setItems([item]);
+      setTotal(1);
+      setPage(1);
+      setSearched(true);
+    } catch (problem) {
+      setError((problem as Error).message);
+    } finally {
+      setUnsplashLoading(false);
     }
   };
 
@@ -238,6 +263,37 @@ export default function StockGallery() {
           {loading ? <Loader2 size={12} className="animate-spin" /> : "Buscar"}
         </button>
       </form>
+
+      <form
+        className="flex items-center gap-1.5"
+        onSubmit={event => {
+          event.preventDefault();
+          void importUnsplashLink();
+        }}
+      >
+        <input
+          value={unsplashInput}
+          onChange={event => setUnsplashInput(event.target.value)}
+          placeholder="Colar link ou ID do Unsplash (opcional)"
+          className="studio-input min-w-0 flex-1 py-1.5 text-[11px]"
+        />
+        <button
+          type="submit"
+          className="btn-ghost px-2 py-1.5 text-[10.5px]"
+          disabled={unsplashLoading}
+        >
+          {unsplashLoading ? (
+            <Loader2 size={12} className="animate-spin" />
+          ) : (
+            "Importar"
+          )}
+        </button>
+      </form>
+
+      <p className="text-[9.5px] leading-relaxed text-muted-foreground">
+        No Unsplash, o crédito do fotógrafo é incluído no nome do arquivo
+        importado. O link/ID usa a sua chave gratuita do Unsplash.
+      </p>
 
       <div className="flex flex-wrap gap-1">
         {SUGGESTIONS.map(suggestion => (

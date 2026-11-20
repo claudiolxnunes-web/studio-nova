@@ -36,6 +36,14 @@ export interface StockSearchResult {
   items: StockItem[];
 }
 
+export async function fetchUnsplashPhoto(input: string): Promise<StockItem> {
+  const params = new URLSearchParams({ q: input.trim() });
+  const response = await fetch(`/api/stock/unsplash/photo?${params.toString()}`);
+  if (!response.ok) throw new Error(await readError(response));
+  const payload = (await response.json()) as { item: StockItem };
+  return payload.item;
+}
+
 async function readError(response: Response): Promise<string> {
   try {
     const payload = (await response.json()) as { error?: string };
@@ -140,7 +148,8 @@ export async function downloadStockItem(item: StockItem): Promise<File> {
       continue;
     }
     const mime = blob.type || (item.kind === "video" ? "video/mp4" : "image/jpeg");
-    const name = `${slug(item.title)}-${item.provider}.${extensionFor(item, mime)}`;
+    const credit = item.author ? `-${slug(item.author)}` : "";
+    const name = `${slug(item.title)}${credit}-${item.provider}.${extensionFor(item, mime)}`;
     return new File([blob], name, { type: mime });
   }
   throw new Error(lastError);
