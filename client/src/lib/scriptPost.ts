@@ -389,6 +389,7 @@ async function availableImageProviders(withImages: boolean): Promise<StockProvid
   const status = await withTimeout(fetchStockStatus(), 5_000).catch(() => null);
   if (status?.pexels.configured) providers.push("pexels");
   if (status?.pixabay.configured) providers.push("pixabay");
+  if (status?.unsplash.configured) providers.push("unsplash");
   return providers;
 }
 
