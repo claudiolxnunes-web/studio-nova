@@ -208,6 +208,13 @@ server/                  Express: voz, imagem, avatares e transcrição
 data/                    chaves e vídeos renderizados (criado sozinho)
 ```
 
+## Atalho na área de trabalho
+
+O arquivo `abrir-studio-nova.sh` inicia o servidor se ele ainda não estiver
+rodando e abre o Studio Nova no navegador. O atalho **Studio Nova** na Área de
+Trabalho usa esse script. Se o atalho não abrir no GNOME, clique com o botão
+direito → **Permitir execução**.
+
 ## Instalar como aplicativo (PWA)
 
 O Studio Nova já tem manifest, ícones e service worker. Para instalar:
