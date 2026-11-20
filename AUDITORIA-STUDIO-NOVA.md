@@ -735,3 +735,36 @@ no mesmo lugar.
   - console sem erros.
 - O login com Gmail fica para a etapa do Supabase (Auth + Google OAuth). Não é
   necessário para instalar o app.
+
+---
+
+## 18. Supabase e login com Gmail
+
+**Data da execução:** 20/11/2026
+
+- Projeto Supabase conectado:
+  `https://qouxoyrtdikknueavqhc.supabase.co`
+- Chave publicável `sb_publishable_...` configurada no `.env` local (ignorado
+  pelo Git).
+- `@supabase/supabase-js` instalado.
+- `client/src/lib/supabase.ts` cria o cliente com sessão persistente.
+- `AuthContext` escuta `getSession` e `onAuthStateChange`.
+- Botão **Entrar com Gmail** no topo da home e no editor.
+- Menu de conta com nome, e-mail, avatar e **Sair**.
+- `supabase/schema.sql` criado com:
+  - `profiles`, `projects`, `project_assets`;
+  - bucket privado `media`;
+  - RLS por `auth.uid()`;
+  - triggers de `updated_at` e criação automática de perfil.
+- `SUPABASE.md` com o passo a passo do Google Cloud + Supabase.
+
+### Bloqueios externos para o login funcionar
+
+1. Rodar `supabase/schema.sql` no SQL Editor do Supabase.
+2. Ativar o provedor Google em Authentication → Providers → Google.
+3. Configurar o OAuth Client ID/Secret do Google Cloud com redirect:
+   `https://qouxoyrtdikknueavqhc.supabase.co/auth/v1/callback`.
+4. Adicionar `http://localhost:3000/**` nas redirect URLs do Supabase.
+
+O app já mostra o botão de login e a sessão, mas o Google ainda está desativado
+no projeto Supabase no momento desta auditoria.

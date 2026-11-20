@@ -13,6 +13,7 @@ import {
 import { Link } from "wouter";
 import { FORMAT_PRESETS } from "@shared/editor";
 import { useEditorContext } from "@/store/editor";
+import AccountButton from "@/components/AccountButton";
 
 export default function TopBar({ onExport }: { onExport: () => void }) {
   const api = useEditorContext();
@@ -102,6 +103,7 @@ export default function TopBar({ onExport }: { onExport: () => void }) {
         <Link href="/ajuda" className="icon-btn" title="Tutorial de uso">
           <BookOpen size={15} />
         </Link>
+        <AccountButton />
         <button
           type="button"
           className="icon-btn"

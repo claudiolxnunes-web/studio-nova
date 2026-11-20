@@ -250,9 +250,15 @@ Adicionar à Tela de Início**.
 
 O login com Gmail não é necessário para instalar o app. Ele será usado para
 sincronizar projetos e mídias na nuvem via **Supabase Auth + Google OAuth**.
-Para ativar, será preciso criar um projeto no Supabase, habilitar o provedor
-Google e informar o Client ID/Secret do Google Cloud. O Studio Nova continua
-funcionando localmente sem login.
+
+A tela **Entrar com Gmail** já está no topo da home e no editor. Para o botão
+funcionar, faltam duas configurações no seu projeto Supabase:
+
+1. rodar `supabase/schema.sql` no **SQL Editor**;
+2. habilitar o provedor **Google** em **Authentication → Providers → Google**.
+
+O passo a passo do Google Cloud e do Supabase está em `SUPABASE.md`. O Studio
+Nova continua funcionando localmente sem login.
 
 ## Onde ficam os projetos
 
