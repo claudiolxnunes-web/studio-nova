@@ -40,7 +40,11 @@ import {
   type SceneTemplateId,
   type ScenarioId,
 } from "@shared/editor";
-import { generateAiImage, generateNarration, transcribe } from "@/lib/api";
+import {
+  generateImagePreferred,
+  generateNarration,
+  transcribe,
+} from "@/lib/api";
 import { estimateWordTimings } from "@/lib/timing";
 import { importFiles } from "@/lib/mediaImport";
 import { deleteProject, getProject, saveProject } from "@/lib/storage";
@@ -898,7 +902,7 @@ export function useEditor(projectId: string | null): EditorApi {
       setVoiceBusy(true);
       setVoiceStatus("Gerando imagem com IA…");
       try {
-        const { blob, mime } = await generateAiImage(prompt);
+        const { blob, mime } = await generateImagePreferred(prompt);
         const extension = mime.includes("jpeg") ? "jpg" : "png";
         const file = new File([blob], `ia-${Date.now()}.${extension}`, {
           type: mime,
@@ -981,7 +985,7 @@ export function useEditor(projectId: string | null): EditorApi {
       setVoiceBusy(true);
       setVoiceStatus(`Gerando cenário ${scenario.label}…`);
       try {
-        const { blob, mime } = await generateAiImage(scenario.prompt);
+        const { blob, mime } = await generateImagePreferred(scenario.prompt);
         const extension = mime.includes("jpeg") ? "jpg" : "png";
         const file = new File(
           [blob],
@@ -1026,7 +1030,7 @@ export function useEditor(projectId: string | null): EditorApi {
         const subject =
           description.trim() || "a friendly Brazilian presenter, 35 years old";
         const prompt = `photorealistic professional headshot portrait of ${subject}, head and shoulders, looking at the camera, neutral soft studio background, natural skin texture, 50mm lens, soft key light, high detail`;
-        const { blob, mime } = await generateAiImage(prompt);
+        const { blob, mime } = await generateImagePreferred(prompt);
         const extension = mime.includes("jpeg") ? "jpg" : "png";
         const file = new File([blob], `retrato-${Date.now()}.${extension}`, {
           type: mime || "image/png",

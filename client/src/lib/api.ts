@@ -1,5 +1,7 @@
 /** Thin client for the editor's server routes. */
 
+import { generateComfyImage } from "./comfyApi";
+
 export interface WordTiming {
   word: string;
   start: number;
@@ -65,6 +67,28 @@ export async function generateAiImage(prompt: string): Promise<{ blob: Blob; mim
   const base64 = payload.dataUrl.split(",")[1] ?? "";
   const bytes = Uint8Array.from(atob(base64), char => char.charCodeAt(0));
   return { blob: new Blob([bytes], { type: payload.mime }), mime: payload.mime };
+}
+
+/**
+ * Prefers the local ComfyUI when it is configured. If it is missing or down,
+ * the free image provider remains as a fallback so the editor never stops.
+ */
+export async function generateImagePreferred(
+  prompt: string,
+  options: { width?: number; height?: number } = {},
+): Promise<{ blob: Blob; mime: string; source: "comfy" | "pollinations" }> {
+  try {
+    const result = await generateComfyImage({
+      prompt,
+      width: options.width,
+      height: options.height,
+    });
+    return { blob: result.blob, mime: result.mime, source: "comfy" };
+  } catch (error) {
+    console.warn("[comfy] usando gerador de reserva:", (error as Error).message);
+    const fallback = await generateAiImage(prompt);
+    return { ...fallback, source: "pollinations" };
+  }
 }
 
 export function base64FromArrayBuffer(buffer: ArrayBuffer): string {

@@ -3,13 +3,22 @@ import { Link } from "wouter";
 import {
   ArrowLeft,
   Check,
+  Cpu,
   ExternalLink,
   Images,
   KeyRound,
+  ListChecks,
   Loader2,
+  RefreshCw,
   ShieldCheck,
 } from "lucide-react";
 import { fetchEngines, saveAvatarConfig, type AvatarConfigView } from "@/lib/avatarApi";
+import {
+  fetchComfyCheckpoints,
+  fetchComfyStatus,
+  saveComfyConfig,
+  type ComfyStatus,
+} from "@/lib/comfyApi";
 import { fetchStockStatus, saveStockKeys, type StockStatus } from "@/lib/stockApi";
 
 interface ProviderField {
@@ -109,12 +118,38 @@ export default function Settings() {
   const [stockSaved, setStockSaved] = useState(false);
   const [stockError, setStockError] = useState<string | null>(null);
 
+  const [comfy, setComfy] = useState<ComfyStatus | null>(null);
+  const [comfyValues, setComfyValues] = useState({
+    url: "",
+    token: "",
+    checkpoint: "",
+    workflow: "",
+  });
+  const [comfySaving, setComfySaving] = useState(false);
+  const [comfyChecking, setComfyChecking] = useState(false);
+  const [comfySaved, setComfySaved] = useState(false);
+  const [comfyError, setComfyError] = useState<string | null>(null);
+  const [checkpoints, setCheckpoints] = useState<string[]>([]);
+
+  const applyComfyStatus = (status: ComfyStatus) => {
+    setComfy(status);
+    setComfyValues(current => ({
+      url: status.url ?? "",
+      token: current.token,
+      checkpoint: status.checkpoint ?? "",
+      workflow: status.workflow ?? "",
+    }));
+  };
+
   useEffect(() => {
     void fetchEngines()
       .then(payload => setConfig(payload.config))
       .catch(() => undefined);
     void fetchStockStatus()
       .then(next => setStock(next))
+      .catch(() => undefined);
+    void fetchComfyStatus()
+      .then(applyComfyStatus)
       .catch(() => undefined);
   }, []);
 
@@ -157,6 +192,61 @@ export default function Settings() {
       setStockError((problem as Error).message);
     } finally {
       setStockSaving(false);
+    }
+  };
+
+  const persistComfyConfig = async () => {
+    const next = await saveComfyConfig({
+      url: comfyValues.url,
+      token: comfyValues.token || undefined,
+      checkpoint: comfyValues.checkpoint,
+      workflow: comfyValues.workflow,
+    });
+    applyComfyStatus(next);
+    setComfyValues(current => ({ ...current, token: "" }));
+    return next;
+  };
+
+  const handleSaveComfy = async () => {
+    setComfySaving(true);
+    setComfyError(null);
+    setComfySaved(false);
+    try {
+      await persistComfyConfig();
+      setComfySaved(true);
+      setTimeout(() => setComfySaved(false), 3000);
+    } catch (problem) {
+      setComfyError((problem as Error).message);
+    } finally {
+      setComfySaving(false);
+    }
+  };
+
+  const handleTestComfy = async () => {
+    setComfyChecking(true);
+    setComfyError(null);
+    try {
+      await persistComfyConfig();
+    } catch (problem) {
+      setComfyError((problem as Error).message);
+    } finally {
+      setComfyChecking(false);
+    }
+  };
+
+  const handleListCheckpoints = async () => {
+    setComfyError(null);
+    try {
+      await persistComfyConfig();
+      const list = await fetchComfyCheckpoints();
+      setCheckpoints(list);
+      if (list.length === 0) {
+        setComfyError(
+          "O ComfyUI respondeu, mas não encontrou checkpoints na pasta models/checkpoints.",
+        );
+      }
+    } catch (problem) {
+      setComfyError((problem as Error).message);
     }
   };
 
@@ -236,6 +326,184 @@ export default function Settings() {
             </section>
           );
         })}
+
+        <section className="panel space-y-4 border border-cyan-500/20 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="flex items-center gap-2 text-[13px] font-medium">
+                <Cpu size={14} className="text-cyan-300" />
+                ComfyUI — geração local
+                {comfy?.online ? (
+                  <span className="flex items-center gap-1 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[9.5px] text-emerald-300">
+                    <Check size={10} /> online
+                  </span>
+                ) : comfy?.configured ? (
+                  <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[9.5px] text-amber-300">
+                    offline
+                  </span>
+                ) : (
+                  <span className="rounded bg-white/8 px-1.5 py-0.5 text-[9.5px] text-muted-foreground">
+                    opcional
+                  </span>
+                )}
+              </h2>
+              <p className="mt-0.5 text-[10.5px] text-muted-foreground">
+                Gere capas, cenários e retratos no seu próprio ComfyUI, com GPU.
+              </p>
+            </div>
+            <a
+              href="https://docs.comfy.org/development/comfyui-server/comms_overview"
+              target="_blank"
+              rel="noreferrer"
+              className="btn-ghost text-[10.5px]"
+            >
+              Documentação <ExternalLink size={12} />
+            </a>
+          </div>
+
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Rode o ComfyUI na máquina com GPU:
+            <code className="mx-1 rounded bg-white/8 px-1">
+              python main.py --listen 0.0.0.0 --port 8188
+            </code>
+            e informe a URL abaixo. O Studio Nova fala com o ComfyUI pelo servidor
+            local; o navegador nunca acessa a porta 8188 diretamente. O ComfyUI não
+            tem login nativo — proteja a porta com firewall/VPN ou um proxy com
+            autenticação.
+          </p>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="label">URL do ComfyUI</span>
+              <input
+                className="studio-input mt-1 w-full font-mono text-[11.5px]"
+                placeholder="http://127.0.0.1:8188"
+                value={comfyValues.url}
+                onChange={event =>
+                  setComfyValues(current => ({ ...current, url: event.target.value }))
+                }
+              />
+            </label>
+            <label className="block">
+              <span className="label">Token do proxy (opcional)</span>
+              <input
+                type="password"
+                className="studio-input mt-1 w-full font-mono text-[11.5px]"
+                placeholder="Bearer / X-API-Key"
+                value={comfyValues.token}
+                onChange={event =>
+                  setComfyValues(current => ({ ...current, token: event.target.value }))
+                }
+              />
+            </label>
+          </div>
+
+          <label className="block">
+            <span className="label">Checkpoint padrão</span>
+            <input
+              className="studio-input mt-1 w-full font-mono text-[11.5px]"
+              placeholder="sd_xl_base_1.0.safetensors"
+              list="comfy-checkpoints"
+              value={comfyValues.checkpoint}
+              onChange={event =>
+                setComfyValues(current => ({ ...current, checkpoint: event.target.value }))
+              }
+            />
+            <datalist id="comfy-checkpoints">
+              {checkpoints.map(name => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+            <span className="mt-1 block text-[10px] text-muted-foreground">
+              Usado pelo grafo padrão quando você não informa um workflow próprio.
+            </span>
+          </label>
+
+          <label className="block">
+            <span className="label">Workflow API (opcional)</span>
+            <textarea
+              className="studio-input mt-1 min-h-[150px] w-full resize-y font-mono text-[10.5px] leading-relaxed"
+              placeholder={'Cole o JSON exportado em "Save (API Format)".\n\nPlaceholders: {{PROMPT}}, {{NEGATIVE}}, {{SEED}}, {{WIDTH}}, {{HEIGHT}}, {{STEPS}}, {{CFG}}, {{CHECKPOINT}}'}
+              value={comfyValues.workflow}
+              onChange={event =>
+                setComfyValues(current => ({ ...current, workflow: event.target.value }))
+              }
+            />
+            <span className="mt-1 block text-[10px] leading-relaxed text-muted-foreground">
+              Se vazio, o Studio usa um grafo SDXL padrão com o checkpoint acima.
+              Se preenchido, o workflow é usado como está — coloque os placeholders
+              nos nós de prompt, seed e tamanho.
+            </span>
+          </label>
+
+          {comfy?.message ? (
+            <p
+              className={`text-[10.5px] ${
+                comfy.online ? "text-emerald-300" : "text-amber-200"
+              }`}
+            >
+              {comfy.message}
+              {comfy.version ? ` · ComfyUI ${comfy.version}` : ""}
+              {comfy.devices?.length
+                ? ` · ${comfy.devices
+                    .map(
+                      device =>
+                        `${device.name} (${Math.round(device.vramTotal / 1024 / 1024 / 1024)} GB)`,
+                    )
+                    .join(", ")}`
+                : ""}
+              {comfy.queueRunning || comfy.queuePending
+                ? ` · fila ${comfy.queueRunning ?? 0}/${comfy.queuePending ?? 0}`
+                : ""}
+            </p>
+          ) : null}
+
+          {comfyError ? (
+            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-[11.5px] text-red-200">
+              {comfyError}
+            </p>
+          ) : null}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleTestComfy()}
+              disabled={comfyChecking || !comfyValues.url}
+              className="btn-ghost text-[11.5px]"
+            >
+              {comfyChecking ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <RefreshCw size={13} />
+              )}
+              Testar conexão
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleListCheckpoints()}
+              disabled={!comfyValues.url}
+              className="btn-ghost text-[11.5px]"
+            >
+              <ListChecks size={13} /> Listar modelos
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleSaveComfy()}
+              disabled={comfySaving}
+              className="btn-primary text-[11.5px]"
+            >
+              {comfySaving ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Check size={13} />
+              )}
+              Salvar ComfyUI
+            </button>
+            {comfySaved ? (
+              <span className="text-[11px] text-emerald-300">Configuração salva.</span>
+            ) : null}
+          </div>
+        </section>
 
         <div className="panel flex items-start gap-3 p-4">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-500/15 text-sky-300">

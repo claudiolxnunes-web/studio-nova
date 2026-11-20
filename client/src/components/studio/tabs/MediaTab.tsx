@@ -171,7 +171,7 @@ export default function MediaTab() {
 
       <Section
         title="Imagem com IA"
-        description="Descreva a cena que você quer e o estúdio gera a imagem."
+        description="Descreva a cena. Usa o ComfyUI se estiver configurado em Ajustes; caso contrário, o gerador gratuito de reserva."
       >
         <textarea
           className="studio-input min-h-[62px] resize-y text-[12px]"

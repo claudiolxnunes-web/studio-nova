@@ -64,6 +64,40 @@ Se quiser clonar um corpo real ou ter iluminação de estúdio, conecte uma chav
 As chaves ficam em `data/studio-config.json` (permissão 600) e nunca são enviadas ao
 navegador. O estúdio fala com o provedor pelo servidor local.
 
+## ComfyUI — geração de imagens local (opcional)
+
+Se você tem uma máquina com **GPU NVIDIA**, pode usar o seu próprio ComfyUI para
+gerar capas, cenários, retratos e imagens do editor, sem fila e sem custo por
+imagem.
+
+1. Na máquina com GPU, inicie o ComfyUI aceitando conexões:
+
+```bash
+python main.py --listen 0.0.0.0 --port 8188
+```
+
+2. Abra **Ajustes** no Studio Nova e preencha:
+   - **URL do ComfyUI**: `http://IP-DA-MAQUINA:8188` (ou `http://127.0.0.1:8188`
+     se for a mesma máquina);
+   - **Token do proxy**: só se você colocou o ComfyUI atrás de um proxy com
+     autenticação;
+   - **Checkpoint**: use **Listar modelos** para escolher um checkpoint instalado.
+
+3. Clique em **Testar conexão** e depois em **Salvar ComfyUI**.
+
+O Studio Nova usa um grafo SDXL padrão. Se você precisa de Flux, vídeo, img2img
+ou outro fluxo, exporte o workflow em **Save (API Format)** e cole em
+**Workflow API**, usando os placeholders:
+
+```text
+{{PROMPT}} {{NEGATIVE}} {{SEED}} {{WIDTH}} {{HEIGHT}} {{STEPS}} {{CFG}} {{CHECKPOINT}}
+```
+
+O navegador nunca acessa a porta 8188 diretamente: o servidor local do Studio Nova
+faz a ponte. O ComfyUI não tem login nativo — proteja a porta com firewall, VPN ou
+proxy autenticado. Sem GPU, o ComfyUI funciona, mas a geração fica lenta demais
+para uso profissional.
+
 ## Bancos de imagens grátis
 
 Na aba **Mídia** do editor você encontra a seção **Galerias grátis**, que busca fotos e

@@ -20,6 +20,12 @@ export interface StudioConfig {
   pexelsKey: string;
   pixabayKey: string;
   unsplashKey: string;
+  /** Optional local/remote ComfyUI server. */
+  comfyUrl: string;
+  comfyToken: string;
+  comfyCheckpoint: string;
+  /** Optional workflow exported with Save (API Format). Supports placeholders. */
+  comfyWorkflow: string;
   /** Engine preselected in the avatar studio. */
   defaultEngine: EngineId;
 }
@@ -35,6 +41,10 @@ const DEFAULTS: StudioConfig = {
   pexelsKey: "",
   pixabayKey: "",
   unsplashKey: "",
+  comfyUrl: "",
+  comfyToken: "",
+  comfyCheckpoint: "",
+  comfyWorkflow: "",
   defaultEngine: "portrait",
 };
 

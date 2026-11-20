@@ -570,3 +570,58 @@ Nova página `/postagem` (link “Colar roteiro e gerar post” na home):
 - Prévia editável do texto antes de gerar.
 - Agendamento/publicação direta.
 - Geração de **aula em vídeo** no mesmo fluxo (o `/roteiro` já faz a base e pode ganhar o mesmo botão “baixar pronto”).
+
+---
+
+## 14. Integração ComfyUI
+
+**Data da execução:** 20/11/2026
+
+### O que foi implementado
+
+- Configuração em **Ajustes** de:
+  - URL do servidor ComfyUI;
+  - token opcional de proxy;
+  - checkpoint padrão com listagem automática em `/object_info/CheckpointLoaderSimple`;
+  - workflow próprio em formato **Save (API Format)**.
+- Rotas no servidor:
+  - `GET /api/comfy/status`;
+  - `POST /api/comfy/config`;
+  - `GET /api/comfy/checkpoints`;
+  - `POST /api/comfy/image`;
+  - `GET /api/comfy/files/:name`.
+- O servidor monta um grafo SDXL padrão quando não há workflow próprio.
+- Workflows próprios aceitam os placeholders:
+  `{{PROMPT}}`, `{{NEGATIVE}}`, `{{SEED}}`, `{{WIDTH}}`, `{{HEIGHT}}`,
+  `{{STEPS}}`, `{{CFG}}`, `{{CHECKPOINT}}`.
+- A rota envia `POST /prompt`, acompanha `/history/{prompt_id}`, baixa o resultado
+  via `/view` e salva em `data/comfy/` com URL local.
+- O editor usa ComfyUI automaticamente para **imagem por IA**, **cenários** e
+  **retrato realista**, com fallback para o Pollinations quando o ComfyUI não
+  estiver configurado ou falhar.
+- O navegador nunca acessa a porta 8188: tudo passa pelo servidor local.
+
+### Validação
+
+Teste de integração completo com um ComfyUI simulado:
+
+| Etapa | Resultado |
+|---|---|
+| Status offline sem URL | `configured:false`, mensagem correta. |
+| Salvar URL + checkpoint | Status online, versão, GPU e fila retornados. |
+| Listar checkpoints | `mock-model.safetensors` retornado. |
+| Gerar imagem | `prompt_id`, seed, dimensões e arquivo PNG retornados. |
+| Workflow injetado | Prompt, seed e checkpoint chegaram ao `/prompt` do mock. |
+| Download | Arquivo salvo em `data/comfy/` e servido por `/api/comfy/files/...`. |
+| Testes | 27 testes passando, incluindo builder e placeholders. |
+
+### Limitações
+
+- Precisa de GPU para uso profissional; CPU funciona, mas é lento.
+- O ComfyUI não tem autenticação nativa; use firewall/VPN/proxy.
+- Workflows variam por instalação; se o grafo padrão não encontrar o checkpoint,
+  use **Save (API Format)** e os placeholders.
+- Vídeo no ComfyUI já é suportado pelo download genérico (`images/gifs/videos`),
+  mas a interface atual do editor ainda trata o resultado como imagem quando o
+  workflow devolve vídeo; a integração de vídeo como camada fica para o próximo
+  passo.
