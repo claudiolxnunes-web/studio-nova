@@ -3,7 +3,9 @@ import {
   Archive,
   ArrowUpRight,
   BookOpen,
+  Box,
   Copy,
+  Cpu,
   Film,
   ImageIcon,
   Layers,
@@ -163,6 +165,14 @@ export default function Projects() {
             <span className="hidden sm:inline">Avatar Studio</span>
           </Link>
           <Link
+            href="/ferramentas"
+            className="btn-ghost !px-2 !py-1.5 text-[11.5px]"
+            title="Ferramentas de IA e status"
+          >
+            <Cpu size={13} />{" "}
+            <span className="hidden sm:inline">Ferramentas</span>
+          </Link>
+          <Link
             href="/ajuda"
             className="btn-ghost !px-2 !py-1.5 text-[11.5px]"
             title="Tutorial de uso"
@@ -242,6 +252,9 @@ export default function Projects() {
               </Link>
               <Link href="/postagem" className="btn-ghost !py-2 text-[12px]">
                 <ImageIcon size={14} /> Colar roteiro e gerar post
+              </Link>
+              <Link href="/tripo" className="btn-ghost !py-2 text-[12px]">
+                <Box size={14} /> Criar objeto 3D
               </Link>
               <Link href="/criar-video" className="btn-3d !py-2 text-[12px]">
                 <Play size={14} /> Avatar fala o texto

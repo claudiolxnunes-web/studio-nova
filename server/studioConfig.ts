@@ -26,6 +26,13 @@ export interface StudioConfig {
   comfyCheckpoint: string;
   /** Optional workflow exported with Save (API Format). Supports placeholders. */
   comfyWorkflow: string;
+  /** Google AI Studio / Nano Banana image generation. */
+  geminiKey: string;
+  geminiModel: string;
+  geminiImageSize: string;
+  /** Tripo 3D generation. */
+  tripoKey: string;
+  tripoModel: string;
   /** Engine preselected in the avatar studio. */
   defaultEngine: EngineId;
 }
@@ -45,6 +52,11 @@ const DEFAULTS: StudioConfig = {
   comfyToken: "",
   comfyCheckpoint: "",
   comfyWorkflow: "",
+  geminiKey: "",
+  geminiModel: "gemini-nano-banana-2.1",
+  geminiImageSize: "1K",
+  tripoKey: "",
+  tripoModel: "v3.1-20260211",
   defaultEngine: "portrait",
 };
 

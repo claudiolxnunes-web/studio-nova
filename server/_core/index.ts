@@ -9,6 +9,8 @@ import { registerAvatarRoutes } from "../avatarRoutes";
 import { registerMediaRoutes } from "../mediaRoutes";
 import { registerStockRoutes } from "../stockRoutes";
 import { registerComfyRoutes } from "../comfyRoutes";
+import { registerNanoRoutes } from "../nanoRoutes";
+import { registerTripoRoutes } from "../tripoRoutes";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
@@ -27,6 +29,8 @@ async function startServer() {
   registerAvatarRoutes(app);
   registerStockRoutes(app);
   registerComfyRoutes(app);
+  registerNanoRoutes(app);
+  registerTripoRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",

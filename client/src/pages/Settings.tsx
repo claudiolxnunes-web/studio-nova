@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import {
   ArrowLeft,
+  Box,
   Check,
   Cpu,
   ExternalLink,
@@ -11,6 +12,7 @@ import {
   Loader2,
   RefreshCw,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { fetchEngines, saveAvatarConfig, type AvatarConfigView } from "@/lib/avatarApi";
 import {
@@ -20,6 +22,16 @@ import {
   type ComfyStatus,
 } from "@/lib/comfyApi";
 import { fetchStockStatus, saveStockKeys, type StockStatus } from "@/lib/stockApi";
+import {
+  fetchNanoStatus,
+  saveNanoConfig,
+  type NanoStatus,
+} from "@/lib/nanoApi";
+import {
+  fetchTripoStatus,
+  saveTripoConfig,
+  type TripoStatus,
+} from "@/lib/tripoApi";
 
 interface ProviderField {
   id: "heygenKey" | "didKey" | "tavusKey";
@@ -131,6 +143,26 @@ export default function Settings() {
   const [comfyError, setComfyError] = useState<string | null>(null);
   const [checkpoints, setCheckpoints] = useState<string[]>([]);
 
+  const [nano, setNano] = useState<NanoStatus | null>(null);
+  const [nanoValues, setNanoValues] = useState({
+    key: "",
+    model: "gemini-nano-banana-2.1",
+    imageSize: "1K",
+  });
+  const [nanoSaving, setNanoSaving] = useState(false);
+  const [nanoSaved, setNanoSaved] = useState(false);
+  const [nanoError, setNanoError] = useState<string | null>(null);
+
+  const [tripo, setTripo] = useState<TripoStatus | null>(null);
+  const [tripoValues, setTripoValues] = useState({
+    key: "",
+    model: "v3.1-20260211",
+  });
+  const [tripoSaving, setTripoSaving] = useState(false);
+  const [tripoSaved, setTripoSaved] = useState(false);
+  const [tripoError, setTripoError] = useState<string | null>(null);
+  const [imagePreference, setImagePreference] = useState("auto");
+
   const applyComfyStatus = (status: ComfyStatus) => {
     setComfy(status);
     setComfyValues(current => ({
@@ -151,6 +183,32 @@ export default function Settings() {
     void fetchComfyStatus()
       .then(applyComfyStatus)
       .catch(() => undefined);
+    void fetchNanoStatus()
+      .then(status => {
+        setNano(status);
+        setNanoValues(current => ({
+          ...current,
+          model: status.model || current.model,
+          imageSize: status.imageSize || current.imageSize,
+        }));
+      })
+      .catch(() => undefined);
+    void fetchTripoStatus()
+      .then(status => {
+        setTripo(status);
+        setTripoValues(current => ({
+          ...current,
+          model: status.model || current.model,
+        }));
+      })
+      .catch(() => undefined);
+    try {
+      setImagePreference(
+        localStorage.getItem("studio-image-provider") ?? "auto",
+      );
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const handleSave = async () => {
@@ -250,6 +308,47 @@ export default function Settings() {
     }
   };
 
+  const handleSaveNano = async () => {
+    setNanoSaving(true);
+    setNanoError(null);
+    setNanoSaved(false);
+    try {
+      const status = await saveNanoConfig({
+        key: nanoValues.key || undefined,
+        model: nanoValues.model,
+        imageSize: nanoValues.imageSize,
+      });
+      setNano(status);
+      setNanoValues(current => ({ ...current, key: "" }));
+      setNanoSaved(true);
+      setTimeout(() => setNanoSaved(false), 3000);
+    } catch (problem) {
+      setNanoError((problem as Error).message);
+    } finally {
+      setNanoSaving(false);
+    }
+  };
+
+  const handleSaveTripo = async () => {
+    setTripoSaving(true);
+    setTripoError(null);
+    setTripoSaved(false);
+    try {
+      const status = await saveTripoConfig({
+        key: tripoValues.key || undefined,
+        model: tripoValues.model,
+      });
+      setTripo(status);
+      setTripoValues(current => ({ ...current, key: "" }));
+      setTripoSaved(true);
+      setTimeout(() => setTripoSaved(false), 3000);
+    } catch (problem) {
+      setTripoError((problem as Error).message);
+    } finally {
+      setTripoSaving(false);
+    }
+  };
+
   return (
     <div className="studio-shell min-h-screen">
       <header className="border-b border-white/8 bg-[#0A0A0F]/85 backdrop-blur">
@@ -285,7 +384,7 @@ export default function Settings() {
         {PROVIDERS.map(provider => {
           const state = config?.engines[provider.engine];
           return (
-            <section key={provider.id} className="panel p-4">
+            <section id={provider.engine} key={provider.id} className="panel p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="flex items-center gap-2 text-[13px] font-medium">
@@ -327,7 +426,273 @@ export default function Settings() {
           );
         })}
 
-        <section className="panel space-y-4 border border-cyan-500/20 p-4">
+        <div className="panel p-4">
+          <h2 className="text-[13px] font-medium">Ferramentas de IA</h2>
+          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            Nomes e papéis de cada motor no Studio Nova:
+          </p>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {[
+              ["Nano Banana", "imagens Google"],
+              ["Tripo 3D", "objetos 3D"],
+              ["ComfyUI", "imagens/vídeo local ou online"],
+              ["HeyGen", "apresentador"],
+              ["Pollinations", "reserva grátis"],
+            ].map(([name, role]) => (
+              <span
+                key={name}
+                className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-1 text-[10px] text-muted-foreground"
+              >
+                <strong className="text-foreground/85">{name}</strong> · {role}
+              </span>
+            ))}
+          </div>
+          <label className="mt-4 block max-w-md">
+            <span className="label">Ordem de geração de imagem</span>
+            <select
+              className="studio-input mt-1 w-full"
+              value={imagePreference}
+              onChange={event => {
+                const value = event.target.value;
+                setImagePreference(value);
+                try {
+                  localStorage.setItem("studio-image-provider", value);
+                } catch {
+                  /* ignore */
+                }
+              }}
+            >
+              <option value="auto">
+                Automático — Nano Banana → ComfyUI → grátis
+              </option>
+              <option value="nano">Nano Banana primeiro</option>
+              <option value="comfy">ComfyUI primeiro</option>
+              <option value="free">Só o gerador gratuito</option>
+            </select>
+          </label>
+        </div>
+
+        <section id="nano" className="panel space-y-4 border border-amber-500/20 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="flex items-center gap-2 text-[13px] font-medium">
+                <Sparkles size={14} className="text-amber-300" />
+                Nano Banana (Google)
+                {nano?.configured ? (
+                  <span className="flex items-center gap-1 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[9.5px] text-emerald-300">
+                    <Check size={10} /> configurado
+                  </span>
+                ) : (
+                  <span className="rounded bg-white/8 px-1.5 py-0.5 text-[9.5px] text-muted-foreground">
+                    opcional
+                  </span>
+                )}
+              </h2>
+              <p className="mt-0.5 text-[10.5px] text-muted-foreground">
+                Imagens com Gemini/Nano Banana usando sua chave do Google AI Studio.
+              </p>
+            </div>
+            <a
+              href="https://aistudio.google.com/apikey"
+              target="_blank"
+              rel="noreferrer"
+              className="btn-ghost text-[10.5px]"
+            >
+              Pegar a chave <ExternalLink size={12} />
+            </a>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block sm:col-span-2">
+              <span className="label">
+                Chave do Google AI Studio
+                {nano?.configured ? " — cole outra para substituir" : ""}
+              </span>
+              <input
+                type="password"
+                className="studio-input mt-1 w-full font-mono text-[11.5px]"
+                placeholder="AIza..."
+                value={nanoValues.key}
+                onChange={event =>
+                  setNanoValues(current => ({ ...current, key: event.target.value }))
+                }
+              />
+            </label>
+            <label className="block">
+              <span className="label">Modelo</span>
+              <select
+                className="studio-input mt-1 w-full"
+                value={nanoValues.model}
+                onChange={event =>
+                  setNanoValues(current => ({
+                    ...current,
+                    model: event.target.value,
+                  }))
+                }
+              >
+                <option value="gemini-nano-banana-2.1">
+                  Nano Banana 2.1 (recomendado)
+                </option>
+                <option value="gemini-3.1-flash-lite-image">
+                  Nano Banana 2 Lite (mais barato/rápido)
+                </option>
+                <option value="gemini-3.1-flash-image">Nano Banana 2</option>
+                <option value="gemini-3-pro-image">Nano Banana Pro</option>
+                <option value="gemini-2.5-flash-image">Nano Banana legado</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="label">Resolução</span>
+              <select
+                className="studio-input mt-1 w-full"
+                value={nanoValues.imageSize}
+                onChange={event =>
+                  setNanoValues(current => ({
+                    ...current,
+                    imageSize: event.target.value,
+                  }))
+                }
+              >
+                <option value="1K">1K (mais barato)</option>
+                <option value="2K">2K</option>
+                <option value="4K">4K (mais caro)</option>
+              </select>
+            </label>
+          </div>
+
+          <p className="text-[10.5px] leading-relaxed text-muted-foreground">
+            {nano?.message ??
+              "A cota gratuita depende da sua conta no Google AI Studio. Se ela acabar, o Studio Nova usa automaticamente o ComfyUI ou o gerador gratuito de reserva."}
+          </p>
+
+          {nanoError ? (
+            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-[11.5px] text-red-200">
+              {nanoError}
+            </p>
+          ) : null}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleSaveNano()}
+              disabled={nanoSaving}
+              className="btn-primary text-[11.5px]"
+            >
+              {nanoSaving ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Check size={13} />
+              )}
+              Salvar Nano Banana
+            </button>
+            {nanoSaved ? (
+              <span className="text-[11px] text-emerald-300">Configuração salva.</span>
+            ) : null}
+          </div>
+        </section>
+
+        <section id="tripo" className="panel space-y-4 border border-violet-500/20 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="flex items-center gap-2 text-[13px] font-medium">
+                <Box size={14} className="text-violet-300" />
+                Tripo 3D
+                {tripo?.configured ? (
+                  <span className="flex items-center gap-1 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[9.5px] text-emerald-300">
+                    <Check size={10} /> configurado
+                  </span>
+                ) : (
+                  <span className="rounded bg-white/8 px-1.5 py-0.5 text-[9.5px] text-muted-foreground">
+                    opcional
+                  </span>
+                )}
+              </h2>
+              <p className="mt-0.5 text-[10.5px] text-muted-foreground">
+                Objetos 3D a partir de texto, com GLB e preview.
+              </p>
+            </div>
+            <a
+              href="https://developers.tripo3d.ai/en/keys"
+              target="_blank"
+              rel="noreferrer"
+              className="btn-ghost text-[10.5px]"
+            >
+              Pegar a chave <ExternalLink size={12} />
+            </a>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block sm:col-span-2">
+              <span className="label">
+                Chave da Tripo API
+                {tripo?.configured ? " — cole outra para substituir" : ""}
+              </span>
+              <input
+                type="password"
+                className="studio-input mt-1 w-full font-mono text-[11.5px]"
+                placeholder="tsk_..."
+                value={tripoValues.key}
+                onChange={event =>
+                  setTripoValues(current => ({ ...current, key: event.target.value }))
+                }
+              />
+            </label>
+            <label className="block">
+              <span className="label">Modelo</span>
+              <select
+                className="studio-input mt-1 w-full"
+                value={tripoValues.model}
+                onChange={event =>
+                  setTripoValues(current => ({
+                    ...current,
+                    model: event.target.value,
+                  }))
+                }
+              >
+                <option value="v3.1-20260211">H3.1 — máxima qualidade</option>
+                <option value="P2-20260801">P2 — game-ready / low poly</option>
+                <option value="v3.0-20250812">v3.0 — estável</option>
+              </select>
+            </label>
+            <div className="flex items-end">
+              <Link href="/tripo" className="btn-ghost w-full !py-2 text-[11px]">
+                Abrir laboratório 3D <ExternalLink size={12} />
+              </Link>
+            </div>
+          </div>
+
+          <p className="text-[10.5px] leading-relaxed text-muted-foreground">
+            {tripo?.message ??
+              "Cada modelo consome créditos da Tripo (1 crédito = US$ 0,01; text-to-3D custa 10–20 créditos)."}
+          </p>
+
+          {tripoError ? (
+            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-[11.5px] text-red-200">
+              {tripoError}
+            </p>
+          ) : null}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleSaveTripo()}
+              disabled={tripoSaving}
+              className="btn-primary text-[11.5px]"
+            >
+              {tripoSaving ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Check size={13} />
+              )}
+              Salvar Tripo
+            </button>
+            {tripoSaved ? (
+              <span className="text-[11px] text-emerald-300">Configuração salva.</span>
+            ) : null}
+          </div>
+        </section>
+
+        <section id="comfy" className="panel space-y-4 border border-cyan-500/20 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="flex items-center gap-2 text-[13px] font-medium">

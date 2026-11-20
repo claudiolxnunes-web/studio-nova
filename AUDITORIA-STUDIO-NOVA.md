@@ -625,3 +625,71 @@ Teste de integração completo com um ComfyUI simulado:
   mas a interface atual do editor ainda trata o resultado como imagem quando o
   workflow devolve vídeo; a integração de vídeo como camada fica para o próximo
   passo.
+
+---
+
+## 15. Nano Banana + Tripo 3D + página Ferramentas
+
+**Data da execução:** 20/11/2026
+
+### Nano Banana (Google)
+
+- Seção própria em **Ajustes → Nano Banana**.
+- Chave do **Google AI Studio** guardada no servidor, nunca no navegador.
+- Modelos: Nano Banana 2.1, 2 Lite, 2, Pro e legado 2.5.
+- Resolução: 1K, 2K ou 4K.
+- Rota `POST /api/nano/image` chama a API **Interactions** do Gemini e aceita
+  `response_format` com proporção e tamanho.
+- O extrator aceita `output_image`, `steps`, `inline_data` e variações de
+  resposta, evitando escolher imagens intermediárias de “thinking”.
+- Arquivos ficam em `data/nano/` e são servidos por `/api/nano/files/...`.
+- A geração usa a cota da conta Google. Se a cota/modelo falhar, o
+  `generateImagePreferred` cai para ComfyUI e depois para Pollinations.
+
+### Tripo 3D
+
+- Seção própria em **Ajustes → Tripo 3D**.
+- Chave da Tripo API no servidor.
+- Modelos H3.1, P2 e v3.0.
+- Rota `POST /api/tripo/text-to-3d` envia prompt/modelo/qualidade e recebe
+  `task_id`.
+- Rota `GET /api/tripo/tasks/:id` acompanha o status, baixa `model_url` e
+  `rendered_image_url` para `data/tripo/` antes de a URL assinada expirar.
+- Página `/tripo` com prompt, exemplos, progresso, preview interativo
+  (`model-viewer`) e download do GLB.
+- Preço de referência: 1 crédito = US$ 0,01; text-to-3D 10–20 créditos;
+  image-to-3D 20–30; auto-rig 25; animação 10.
+
+### Página Ferramentas
+
+Nova página `/ferramentas` com nome, papel, status e link de configuração de:
+
+- Nano Banana;
+- Tripo 3D;
+- ComfyUI;
+- HeyGen;
+- Pollinations;
+- Roteiro/postagem.
+
+Isso resolve o “como chamo as ferramentas”: cada motor tem nome, função e status
+no mesmo lugar.
+
+### Validação
+
+| Cenário | Resultado |
+|---|---|
+| Nano Banana com mock da API Interactions | Imagem salva, proporção 4:5 e URL local retornada. |
+| Tripo text-to-3D com mock | `task_id` criado, status consultado, GLB e preview baixados. |
+| Página `/tripo` | Progresso, `model-viewer` e botão “Baixar GLB” renderizados. |
+| Página `/ferramentas` | Nano Banana, Tripo 3D e ComfyUI listados. |
+| Console | Sem erros. |
+| Testes | 31 testes passando. |
+
+### Limitações
+
+- Nano Banana depende da cota/billing da conta Google; “grátis” depende do plano
+  e do modelo escolhido.
+- Tripo é pago por crédito e requer chave.
+- O Tripo gera objetos 3D, não avatar falante/lip sync.
+- A camada 3D nativa no editor (Three.js) ainda não entrou; hoje o fluxo entrega
+  GLB + preview + download.

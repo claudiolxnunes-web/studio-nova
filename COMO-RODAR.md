@@ -98,6 +98,40 @@ faz a ponte. O ComfyUI não tem login nativo — proteja a porta com firewall, V
 proxy autenticado. Sem GPU, o ComfyUI funciona, mas a geração fica lenta demais
 para uso profissional.
 
+## Nano Banana (Google) — imagens com IA
+
+O Nano Banana é o gerador de imagens do Gemini. A integração usa uma chave do
+**Google AI Studio**, que fica só no servidor local.
+
+1. Crie a chave em https://aistudio.google.com/apikey.
+2. Abra **Ajustes → Nano Banana**.
+3. Cole a chave, escolha o modelo e a resolução e clique em **Salvar Nano Banana**.
+
+Modelos disponíveis:
+
+- **Nano Banana 2.1** — melhor qualidade;
+- **Nano Banana 2 Lite** — mais barato/rápido, boa opção para esticar a cota;
+- **Nano Banana 2**, **Pro** e o **legado 2.5**.
+
+A geração consome a cota da sua conta Google. Se a cota gratuita não cobrir o
+modelo escolhido, o Studio Nova avisa e cai automaticamente no ComfyUI ou no
+gerador gratuito de reserva. Para consultar os nomes e o status de todas as
+ferramentas, abra **Ferramentas** na home.
+
+## Tripo 3D — objetos 3D
+
+O Tripo gera modelos 3D a partir de texto e entrega **GLB** com preview.
+
+1. Crie a chave em https://developers.tripo3d.ai/en/keys.
+2. Abra **Ajustes → Tripo 3D** e cole a chave.
+3. Abra **Tripo 3D** na home (ou `/tripo`), descreva o objeto e clique em
+   **Gerar modelo 3D**.
+
+O laboratório mostra o progresso, o preview interativo e o botão de download do
+GLB. Cada modelo consome créditos da Tripo (1 crédito = US$ 0,01; text-to-3D
+custa de 10 a 20 créditos). É ideal para válvulas, bombas, EPI, esteiras,
+equipamentos e diagramas técnicos — não para o apresentador falando.
+
 ## Bancos de imagens grátis
 
 Na aba **Mídia** do editor você encontra a seção **Galerias grátis**, que busca fotos e

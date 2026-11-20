@@ -1,6 +1,7 @@
 /** Thin client for the editor's server routes. */
 
 import { generateComfyImage } from "./comfyApi";
+import { generateNanoImage } from "./nanoApi";
 
 export interface WordTiming {
   word: string;
@@ -70,25 +71,52 @@ export async function generateAiImage(prompt: string): Promise<{ blob: Blob; mim
 }
 
 /**
- * Prefers the local ComfyUI when it is configured. If it is missing or down,
- * the free image provider remains as a fallback so the editor never stops.
+ * Provider order is configurable in Settings. Default: Nano Banana (Google) →
+ * ComfyUI → free Pollinations. Every provider fails fast when unconfigured, so
+ * the editor always completes with whichever tool the user has available.
  */
 export async function generateImagePreferred(
   prompt: string,
   options: { width?: number; height?: number } = {},
-): Promise<{ blob: Blob; mime: string; source: "comfy" | "pollinations" }> {
-  try {
-    const result = await generateComfyImage({
-      prompt,
-      width: options.width,
-      height: options.height,
-    });
-    return { blob: result.blob, mime: result.mime, source: "comfy" };
-  } catch (error) {
-    console.warn("[comfy] usando gerador de reserva:", (error as Error).message);
-    const fallback = await generateAiImage(prompt);
-    return { ...fallback, source: "pollinations" };
+): Promise<{
+  blob: Blob;
+  mime: string;
+  source: "nano" | "comfy" | "pollinations";
+}> {
+  const preference =
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem("studio-image-provider")
+      : null;
+  const order: Array<"nano" | "comfy"> =
+    preference === "comfy"
+      ? ["comfy", "nano"]
+      : preference === "free"
+        ? []
+        : ["nano", "comfy"];
+
+  for (const provider of order) {
+    try {
+      if (provider === "nano") {
+        const result = await generateNanoImage({
+          prompt,
+          width: options.width,
+          height: options.height,
+        });
+        return { blob: result.blob, mime: result.mime, source: "nano" };
+      }
+      const result = await generateComfyImage({
+        prompt,
+        width: options.width,
+        height: options.height,
+      });
+      return { blob: result.blob, mime: result.mime, source: "comfy" };
+    } catch (error) {
+      console.warn(`[${provider}] usando próximo provedor:`, (error as Error).message);
+    }
   }
+
+  const fallback = await generateAiImage(prompt);
+  return { ...fallback, source: "pollinations" };
 }
 
 export function base64FromArrayBuffer(buffer: ArrayBuffer): string {
