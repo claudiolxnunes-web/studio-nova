@@ -118,6 +118,20 @@ on public.project_assets for delete
 using (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------------
+-- Grants for authenticated users (RLS still applies)
+-- ---------------------------------------------------------------------------
+grant usage on schema public to anon, authenticated;
+
+grant select, insert, update, delete
+  on public.profiles to authenticated;
+
+grant select, insert, update, delete
+  on public.projects to authenticated;
+
+grant select, insert, update, delete
+  on public.project_assets to authenticated;
+
+-- ---------------------------------------------------------------------------
 -- updated_at triggers
 -- ---------------------------------------------------------------------------
 create or replace function public.set_updated_at()
@@ -172,7 +186,7 @@ for each row execute function public.handle_new_user();
 -- ---------------------------------------------------------------------------
 insert into storage.buckets (id, name, public)
 values ('media', 'media', false)
-on conflict (id) do nothing;
+on conflict (id) do update set public = excluded.public;
 
 drop policy if exists "media_select_own" on storage.objects;
 create policy "media_select_own"

@@ -1,38 +1,21 @@
 # Supabase + login com Gmail
 
-Projeto Supabase já criado:
+Projeto Supabase:
 
 ```text
 https://qouxoyrtdikknueavqhc.supabase.co
 ```
 
-Falta apenas a **chave pública `anon`** para o app conectar.
+A chave publicável (`sb_publishable_...`, equivalente à antiga `anon`) já está
+configurada no `.env` local como `VITE_SUPABASE_ANON_KEY`. Ela é pública por
+design e pode ficar no navegador; a RLS protege os dados.
 
-## 1. Pegar a chave anon
+> A chave `service_role` / `sb_secret_...` é secreta. Nunca coloque no frontend,
+> no Git ou no chat. Ela só pode ser usada no servidor.
 
-No Supabase Dashboard:
+## 1. Rodar o schema
 
-```text
-Project Settings (engrenagem) → API → Project API keys
-```
-
-Copie a chave **`anon` / `public`**.
-
-> Não copie a `service_role` para o navegador nem para o chat. Ela é secreta e
-> só pode ficar no `.env` do servidor.
-
-Depois escolha uma opção:
-
-- cole a chave anon no `.env` local:
-  ```env
-  VITE_SUPABASE_URL=https://qouxoyrtdikknueavqhc.supabase.co
-  VITE_SUPABASE_ANON_KEY=COLE_A_CHAVE_ANON_AQUI
-  ```
-- ou me passe a chave anon e eu configuro o `.env` local.
-
-## 2. Criar as tabelas e políticas
-
-Abra:
+Se o banco está vazio, abra:
 
 ```text
 Supabase Dashboard → SQL Editor → New query
@@ -49,18 +32,38 @@ E clique em **Run**.
 Isso cria:
 
 - `profiles` — nome, e-mail e avatar;
-- `projects` — projetos com JSON completo;
+- `projects` — projetos com o JSON completo;
 - `project_assets` — metadados das mídias;
 - bucket privado `media` para os arquivos;
-- políticas RLS: cada usuário só acessa os próprios dados.
+- políticas RLS: cada usuário só acessa os próprios dados;
+- trigger que cria o perfil no primeiro login.
 
-## 3. Ativar login com Google
+### Se o schema já rodou mas o app dá erro
 
-### 3.1 Google Cloud
+Sintomas:
+
+```text
+permission denied for table projects
+Bucket not found
+```
+
+Rode o complemento idempotente:
+
+```text
+supabase/fix-existing.sql
+```
+
+Ele garante permissões para `authenticated`, cria o bucket `media`, recria as
+políticas e os triggers. Pode ser executado mais de uma vez.
+
+## 2. Ativar login com Google
+
+### 2.1 Google Cloud
 
 1. Abra https://console.cloud.google.com/
 2. Crie/selecione um projeto.
-3. **APIs & Services → OAuth consent screen**:
+3. **APIs & Services → OAuth consent screen** (ou **Google Auth Platform →
+   Branding**):
    - tipo **External**;
    - nome do app: `Studio Nova`;
    - e-mail de suporte;
@@ -78,7 +81,7 @@ Isso cria:
      ```
 5. Copie o **Client ID** e o **Client Secret**.
 
-### 3.2 Supabase
+### 2.2 Supabase
 
 1. Abra **Authentication → Providers → Google**.
 2. Ative.
@@ -96,21 +99,31 @@ Depois em **Authentication → URL Configuration**:
   http://localhost:3000/**
   ```
 
-## 4. O que será implementado no app
+## 3. Testar
 
-Quando a chave estiver configurada:
+Abra:
 
-- botão **Entrar com Google**;
-- sessão persistente;
-- avatar/nome/e-mail no topo;
-- sincronização dos projetos com `projects`;
-- upload das mídias para o bucket `media`;
-- “baixar da nuvem” em outro computador;
+```text
+http://localhost:3000
+```
+
+Clique em **Entrar com Gmail**.
+
+## 4. O que já está implementado
+
+- botão **Entrar com Gmail** na home e no editor;
+- sessão persistente via Supabase Auth;
+- avatar, nome, e-mail e botão **Sair**;
+- schema, bucket e políticas;
 - modo local continua funcionando sem login.
+
+Ainda falta implementar a sincronização dos projetos e o upload das mídias para
+o bucket `media`. Isso será feito depois que o login com Google estiver
+funcionando.
 
 ## 5. Segurança
 
-- A chave `anon` é pública por design; a RLS protege os dados.
+- A chave publicável é pública por design; a RLS protege os dados.
 - A `service_role` ignora RLS; nunca vai para o navegador.
 - Não versione `.env` (já está no `.gitignore`).
 - Em produção, adicione o domínio real em Google OAuth e Supabase.
